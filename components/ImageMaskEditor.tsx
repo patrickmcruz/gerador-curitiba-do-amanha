@@ -16,14 +16,39 @@ interface ImageMaskEditorProps {
 export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onClose, onGenerate, isLoading }) => {
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null); // For custom cursor
   const isDrawing = useRef(false);
   const lastPos = useRef<{ x: number, y: number } | null>(null);
 
   const [prompt, setPrompt] = useState('');
   const [brushSize, setBrushSize] = useState(40);
   const [history, setHistory] = useState<ImageData[]>([]);
+  
+  // State for custom cursor
+  const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
+  const [displayBrushSize, setDisplayBrushSize] = useState(brushSize);
 
   const getCanvasContext = useCallback(() => canvasRef.current?.getContext('2d'), []);
+
+  const updateDisplayBrushSize = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0) { // Avoid division by zero
+        const scale = canvas.width / rect.width;
+        // brushSize is in canvas pixels, so we divide by scale to get screen pixels.
+        setDisplayBrushSize(brushSize / scale);
+      }
+    }
+  }, [brushSize]);
+  
+  useEffect(() => {
+    updateDisplayBrushSize();
+    window.addEventListener('resize', updateDisplayBrushSize);
+    return () => {
+      window.removeEventListener('resize', updateDisplayBrushSize);
+    };
+  }, [updateDisplayBrushSize]);
 
   // Initialize canvas when image loads
   const handleImageLoad = () => {
@@ -35,6 +60,7 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
       canvas.height = image.naturalHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       setHistory([]);
+      setTimeout(updateDisplayBrushSize, 0); // Update brush display size after layout
     }
   };
 
@@ -123,6 +149,24 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
       onGenerate(maskDataUrl, prompt);
     }
   };
+  
+  const handleContainerMouseMove = (e: React.MouseEvent) => {
+    const container = editorContainerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      setCursorPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+    draw(e);
+  };
+  
+  const handleContainerMouseLeave = () => {
+    setCursorPosition(null);
+    stopDrawing();
+  };
+
 
   return (
     <div 
@@ -140,27 +184,42 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
       </div>
 
       {/* Main Content Area */}
-      <div className="relative w-full h-full max-w-6xl max-h-[calc(100vh-200px)] flex items-center justify-center">
+      <div 
+        ref={editorContainerRef}
+        className="relative w-full h-full max-w-6xl max-h-[calc(100vh-200px)] flex items-center justify-center cursor-none"
+        onMouseDown={startDrawing}
+        onMouseMove={handleContainerMouseMove}
+        onMouseUp={stopDrawing}
+        onMouseLeave={handleContainerMouseLeave}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
+      >
         <img
           ref={imageRef}
           src={imageUrl}
           alt="Image to edit"
           className="max-w-full max-h-full object-contain select-none"
           onLoad={handleImageLoad}
-          crossOrigin="anonymous" // Required for canvas to read pixel data if image is from another origin
+          crossOrigin="anonymous"
         />
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full cursor-crosshair"
+          className="absolute top-0 left-0 w-full h-full"
           style={{ objectFit: 'contain' }}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
         />
+        {cursorPosition && (
+          <div 
+            className="absolute rounded-full border border-white bg-white/25 pointer-events-none"
+            style={{
+              left: `${cursorPosition.x}px`,
+              top: `${cursorPosition.y}px`,
+              width: `${displayBrushSize}px`,
+              height: `${displayBrushSize}px`,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        )}
       </div>
 
       {/* Bottom Controls */}

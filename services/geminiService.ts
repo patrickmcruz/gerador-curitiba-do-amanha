@@ -37,29 +37,29 @@ const handleApiError = (error: any): string => {
   const errorMessage = error.message?.toLowerCase() || "";
   let userMessage;
 
-  if (errorMessage.includes("unsupported file type")) {
+  if (errorMessage.includes("tipo de arquivo não suportado")) {
       userMessage = error.message;
-  } else if (errorMessage.includes("api key not valid")) {
-    userMessage = "Invalid API Key. Please ensure it is configured correctly.";
+  } else if (errorMessage.includes("chave de api inválida")) {
+    userMessage = "Chave de API inválida. Certifique-se de que ela esteja configurada corretamente.";
   } else if (
     errorMessage.includes("quota") ||
     errorMessage.includes("billing")
   ) {
     userMessage =
-      "API quota exceeded. Please check your plan and billing details.";
+      "Cota de API excedida. Por favor verifique seu plano e detalhes de cobrança.";
   } else if (errorMessage.includes("400")) {
     userMessage =
-      "Invalid request. The uploaded image might be in an unsupported format, corrupted, or too large.";
+      "Requisição inválida. A imagem enviada pode estar em formato não suportado, quebrada ou muito longa.";
   } else if (
     errorMessage.includes("500") ||
     errorMessage.includes("service")
   ) {
     userMessage =
-      "The AI service is temporarily unavailable. Please try again later.";
-  } else if (errorMessage.includes("no image was generated")) {
+      "O serviço de IA está temporariamente indisponível. Por favor tente novamente mais tarde.";
+  } else if (errorMessage.includes("nenhuma imagem foi gerada")) {
     userMessage = error.message; // Use the specific message for safety refusals
   } else {
-    userMessage = error.message || "An unknown error occurred. Please try again.";
+    userMessage = error.message || "Ocorreu um erro desconhecido. Por favor tente novamente.";
   }
   
   return userMessage;
@@ -72,7 +72,7 @@ export const generateInitialImages = async (
   customPrompt: string
 ): Promise<string[]> => {
   if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
+    throw new Error("Chave API_KEY não configurada.");
   }
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -115,7 +115,7 @@ export const generateInitialImages = async (
 
     if (generatedImages.length === 0) {
       throw new Error(
-        "No image was generated. The model may have refused the request due to safety policies."
+        "Nenhuma imagem foi gerada. A modelo pode ter recusado a solicitação devido a políticas de segurança."
       );
     }
     return generatedImages;
@@ -131,7 +131,7 @@ export const refineImageWithText = async (
   customPrompt: string
 ): Promise<string> => {
   if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
+    throw new Error("Variável de ambiente API_KEY não definida.");
   }
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -168,7 +168,7 @@ export const refineImageWithText = async (
 
     if (!generatedImage) {
       throw new Error(
-        "No image was generated. The model may have refused the request due to safety policies."
+        "Nenhuma imagem foi gerada. A modelo pode ter recusado a solicitação devido a políticas de segurança."
       );
     }
     return generatedImage;
