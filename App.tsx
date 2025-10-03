@@ -92,10 +92,17 @@ const App: React.FC = () => {
     setShowModificationUI(false); // Reset modification UI on new image
     setModificationPrompt('');   // Reset modification prompt
   };
+  
+  const isPromptProvided = selectedScenario?.description?.trim() !== '' || customPrompt.trim() !== '';
 
   const handleGenerateClick = useCallback(async () => {
     if (!originalImage) {
       setError('Please upload an image first.');
+      return;
+    }
+    
+    if (!isPromptProvided) {
+      setError('Por favor, adicione uma descrição ao cenário ou preencha o Prompt Customizado.');
       return;
     }
 
@@ -114,7 +121,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, selectedScenario, customPrompt]);
+  }, [originalImage, selectedScenario, customPrompt, isPromptProvided]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -275,20 +282,27 @@ const App: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={handleGenerateClick}
-                    disabled={!originalImage || isLoading}
-                    className="w-full flex justify-center items-center gap-2 bg-brand-blue hover:bg-brand-blue/90 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-brand-blue/20"
-                  >
-                    {isLoading ? (
-                      <>
-                        <SpinnerIcon />
-                        Gerando o Futuro...
-                      </>
-                    ) : (
-                      'Re-imagine O Futuro'
+                  <div>
+                    <button
+                      onClick={handleGenerateClick}
+                      disabled={!originalImage || !isPromptProvided || isLoading}
+                      className="w-full flex justify-center items-center gap-2 bg-brand-blue hover:bg-brand-blue/90 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-brand-blue/20"
+                    >
+                      {isLoading ? (
+                        <>
+                          <SpinnerIcon />
+                          Gerando o Futuro...
+                        </>
+                      ) : (
+                        'Re-imagine O Futuro'
+                      )}
+                    </button>
+                    {!isPromptProvided && originalImage && !isLoading && (
+                      <p className="text-yellow-400 text-center text-sm mt-2">
+                        Adicione uma descrição ao cenário ou um prompt customizado para continuar.
+                      </p>
                     )}
-                  </button>
+                  </div>
                 )}
                 {error && <p className="text-red-400 text-center mt-2">{error}</p>}
               </div>
