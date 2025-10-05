@@ -6,6 +6,8 @@ import { CloseIcon } from './icons/CloseIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { CompareIcon } from './icons/CompareIcon';
 import { ImageComparisonSlider } from './ImageComparisonSlider';
+import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
+import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
 interface ImageDisplayProps {
   title: string;
@@ -30,10 +32,31 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
     setIsComparing(false); // Reset comparison mode on close
   };
 
+  const handlePrevImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (imageUrls && imageUrls.length > 1) {
+      onSelectImageIndex((selectedImageIndex - 1 + imageUrls.length) % imageUrls.length);
+    }
+  };
+
+  const handleNextImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (imageUrls && imageUrls.length > 1) {
+      onSelectImageIndex((selectedImageIndex + 1) % imageUrls.length);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         closeFullScreen();
+      }
+      if (imageUrls && imageUrls.length > 1) {
+        if (event.key === 'ArrowLeft') {
+          handlePrevImage();
+        } else if (event.key === 'ArrowRight') {
+          handleNextImage();
+        }
       }
     };
 
@@ -48,7 +71,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'auto';
     };
-  }, [isFullScreen]);
+  }, [isFullScreen, imageUrls, selectedImageIndex, onSelectImageIndex]);
 
   const handleDownload = () => {
     if (!selectedImageUrl) return;
@@ -153,6 +176,26 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
           >
             <CloseIcon />
           </button>
+          
+          {/* Navigation Controls */}
+          {imageUrls && imageUrls.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-20"
+                aria-label="Previous image"
+              >
+                <ChevronLeftIcon />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-20"
+                aria-label="Next image"
+              >
+                <ChevronRightIcon />
+              </button>
+            </>
+          )}
 
           {/* Bottom Right Controls */}
           {originalImageUrl && (
@@ -169,7 +212,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
           )}
           
           {/* Main Content */}
-          <div className="w-full h-full flex items-center justify-center p-8" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full h-full flex items-center justify-center p-8 sm:p-16" onClick={(e) => e.stopPropagation()}>
             {isComparing && originalImageUrl ? (
               <ImageComparisonSlider beforeImageUrl={originalImageUrl} afterImageUrl={selectedImageUrl} />
             ) : (
