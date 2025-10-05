@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { CloseIcon } from './icons/CloseIcon';
 import { SpinnerIcon } from './icons/SpinnerIcon';
@@ -58,7 +57,8 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
     if (image && canvas && ctx) {
       canvas.width = image.naturalWidth;
       canvas.height = image.naturalHeight;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       setHistory([]);
       setTimeout(updateDisplayBrushSize, 0); // Update brush display size after layout
     }
@@ -138,7 +138,8 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
     const canvas = canvasRef.current;
     if(ctx && canvas) {
       saveToHistory();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   }, [getCanvasContext, saveToHistory]);
   
@@ -206,7 +207,7 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full"
-          style={{ objectFit: 'contain' }}
+          style={{ objectFit: 'contain', mixBlendMode: 'screen', opacity: 0.5 }}
         />
         {cursorPosition && (
           <div 
