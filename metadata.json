@@ -1,5 +1,5 @@
 {
   "name": "Gerador Curitiba do Amanhã",
-  "description": "Upload an image of Curitiba, Brazil, and use AI to re-imagine what it might look like 10, 20, 30, or 50 years in the future. The app leverages Gemini to generate futuristic cityscapes based on user-provided images.",
+  "description": "Upload an image of Curitiba, Brazil, and use AI to re-imagine what it might look like 25 years in the future. The app leverages Gemini to generate futuristic cityscapes based on user-provided images.",
   "requestFramePermissions": []
 }
