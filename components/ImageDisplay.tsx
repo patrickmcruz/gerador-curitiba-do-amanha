@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { FullScreenIcon } from './icons/FullScreenIcon';
@@ -32,31 +32,29 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
     setIsComparing(false); // Reset comparison mode on close
   };
 
-  const handlePrevImage = (e?: React.MouseEvent) => {
+  const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (imageUrls && imageUrls.length > 1) {
       onSelectImageIndex((selectedImageIndex - 1 + imageUrls.length) % imageUrls.length);
     }
-  };
+  }, [imageUrls, selectedImageIndex, onSelectImageIndex]);
 
-  const handleNextImage = (e?: React.MouseEvent) => {
+  const handleNextImage = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (imageUrls && imageUrls.length > 1) {
       onSelectImageIndex((selectedImageIndex + 1) % imageUrls.length);
     }
-  };
+  }, [imageUrls, selectedImageIndex, onSelectImageIndex]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         closeFullScreen();
       }
-      if (imageUrls && imageUrls.length > 1) {
-        if (event.key === 'ArrowLeft') {
-          handlePrevImage();
-        } else if (event.key === 'ArrowRight') {
-          handleNextImage();
-        }
+      if (event.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (event.key === 'ArrowRight') {
+        handleNextImage();
       }
     };
 
@@ -71,7 +69,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'auto';
     };
-  }, [isFullScreen, imageUrls, selectedImageIndex, onSelectImageIndex]);
+  }, [isFullScreen, handlePrevImage, handleNextImage]);
 
   const handleDownload = () => {
     if (!selectedImageUrl) return;
@@ -182,14 +180,14 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, subtitle, ima
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-20"
+                className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
                 aria-label="Previous image"
               >
                 <ChevronLeftIcon />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-20"
+                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
                 aria-label="Next image"
               >
                 <ChevronRightIcon />
