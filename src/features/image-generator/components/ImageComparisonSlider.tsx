@@ -85,7 +85,7 @@ export const ImageComparisonSlider: React.FC<ImageComparisonSliderProps> = ({ be
       >
         <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white shadow-xl">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 text-gray-700">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l-6 6 6 6m6-12l6 6-6 6" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 4L4 12l6 8M14 4l6 8-6 8" />
           </svg>
         </div>
       </div>
