@@ -1,9 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { UploadIcon } from './icons/UploadIcon';
-import { FullScreenIcon } from './icons/FullScreenIcon';
-import { CloseIcon } from './icons/CloseIcon';
-import { PencilIcon } from './icons/PencilIcon';
+import { UploadIcon, FullScreenIcon, CloseIcon, PencilIcon } from '../../../components/ui/Icons';
 
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void;

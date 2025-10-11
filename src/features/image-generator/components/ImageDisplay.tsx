@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SpinnerIcon } from './icons/SpinnerIcon';
-import { DownloadIcon } from './icons/DownloadIcon';
-import { FullScreenIcon } from './icons/FullScreenIcon';
-import { CloseIcon } from './icons/CloseIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
-import { CompareIcon } from './icons/CompareIcon';
+import { SpinnerIcon, DownloadIcon, FullScreenIcon, CloseIcon, SparklesIcon, CompareIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/ui/Icons';
 import { ImageComparisonSlider } from './ImageComparisonSlider';
-import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
-import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
 interface ImageDisplayProps {
   title: string;

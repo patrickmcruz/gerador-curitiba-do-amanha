@@ -1,9 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { CloseIcon } from './icons/CloseIcon';
-import { SpinnerIcon } from './icons/SpinnerIcon';
-import { BrushIcon } from './icons/BrushIcon';
-import { UndoIcon } from './icons/UndoIcon';
-import { TrashIcon } from './icons/TrashIcon';
+import { CloseIcon, SpinnerIcon, BrushIcon, UndoIcon, TrashIcon } from '../../../components/ui/Icons';
 
 interface ImageMaskEditorProps {
   imageUrl: string;

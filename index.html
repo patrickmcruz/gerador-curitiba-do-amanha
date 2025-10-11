@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gerador Curitiba do Amanhã</title>
+    <title>Hipervisor - Curitiba do Amanhã</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -20,12 +19,17 @@
             },
             animation: {
               'fade-in': 'fadeIn 0.3s ease-out',
+              'logo-glow': 'logoGlow 4s ease-in-out infinite alternate',
             },
             keyframes: {
               fadeIn: {
                 '0%': { opacity: '0' },
                 '100%': { opacity: '1' },
               },
+              logoGlow: {
+                '0%': { filter: 'drop-shadow(0 0 3px #00BFFF) drop-shadow(0 0 8px #00BFFF)' },
+                '100%': { filter: 'drop-shadow(0 0 8px #8A2BE2) drop-shadow(0 0 15px #8A2BE2)' },
+              }
             }
           },
         },

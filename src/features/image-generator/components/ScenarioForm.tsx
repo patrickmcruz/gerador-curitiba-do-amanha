@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Scenario } from '../types';
+import { Scenario } from '../constants';
 
 interface ScenarioFormProps {
   initialScenarios: Scenario[];
