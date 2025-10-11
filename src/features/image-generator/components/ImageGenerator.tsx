@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ImageUploader } from './ImageUploader';
 import { ImageDisplay } from './ImageDisplay';
 import { ScenarioSelector } from './ScenarioSelector';
 import { ImageMaskEditor } from './ImageMaskEditor';
-import { generateInitialImages, refineImageWithMask, refineImageWithText } from '../services/geminiService';
+import { imageGenerationService } from '../../../services/image-generation';
 import { Scenario } from '../constants';
 import { PlusIcon, SpinnerIcon, BrushIcon } from '../../../components/ui/Icons';
 
@@ -12,14 +12,34 @@ interface ImageGeneratorProps {
     onManageScenarios: () => void;
     customPrompt: string;
     onCustomPromptChange: (prompt: string) => void;
+    // Lifted state props
+    originalImage: File | null;
+    originalImageUrl: string | null;
+    generatedImageUrls: string[] | null;
+    selectedGeneratedImageIndex: number;
+    selectedScenarioValue: string;
+    onImageUpload: (file: File) => void;
+    onGeneratedImageUrlsChange: (urls: string[] | null) => void;
+    onSelectedGeneratedImageIndexChange: (index: number) => void;
+    onSelectedScenarioValueChange: (value: string) => void;
 }
 
-export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ scenarios, onManageScenarios, customPrompt, onCustomPromptChange }) => {
-  const [originalImage, setOriginalImage] = useState<File | null>(null);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
-  const [generatedImageUrls, setGeneratedImageUrls] = useState<string[] | null>(null);
-  const [selectedGeneratedImageIndex, setSelectedGeneratedImageIndex] = useState<number>(0);
-  const [selectedScenarioValue, setSelectedScenarioValue] = useState<string>(scenarios[0].value);
+export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
+    scenarios, 
+    onManageScenarios, 
+    customPrompt, 
+    onCustomPromptChange,
+    originalImage,
+    originalImageUrl,
+    generatedImageUrls,
+    selectedGeneratedImageIndex,
+    selectedScenarioValue,
+    onImageUpload,
+    onGeneratedImageUrlsChange,
+    onSelectedGeneratedImageIndexChange,
+    onSelectedScenarioValueChange,
+}) => {
+  // Local state for UI interactions within this component
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showModificationUI, setShowModificationUI] = useState<boolean>(false);
@@ -33,20 +53,12 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ scenarios, onMan
   const futureYearLabel = '25 Anos';
   
   const handleScenarioChange = (scenario: Scenario) => {
-    setSelectedScenarioValue(scenario.value);
+    onSelectedScenarioValueChange(scenario.value);
   };
 
-  useEffect(() => {
-    if (!scenarios.find(s => s.value === selectedScenarioValue)) {
-      setSelectedScenarioValue(scenarios[0]?.value || '');
-    }
-  }, [scenarios, selectedScenarioValue]);
-
   const handleImageUpload = (file: File) => {
-    setOriginalImage(file);
-    setOriginalImageUrl(URL.createObjectURL(file));
-    setGeneratedImageUrls(null);
-    setSelectedGeneratedImageIndex(0);
+    onImageUpload(file);
+    // Reset local UI state when a new image is uploaded
     setError(null);
     setShowModificationUI(false);
     setModificationPrompt('');
@@ -67,20 +79,20 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ scenarios, onMan
 
     setIsLoading(true);
     setError(null);
-    setGeneratedImageUrls(null);
-    setSelectedGeneratedImageIndex(0);
+    onGeneratedImageUrlsChange(null);
+    onSelectedGeneratedImageIndexChange(0);
     setShowModificationUI(false);
 
     try {
-      const generatedImageBase64Array = await generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt);
-      setGeneratedImageUrls(generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`));
+      const generatedImageBase64Array = await imageGenerationService.generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt);
+      onGeneratedImageUrlsChange(generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`));
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, selectedScenario, customPrompt, isPromptProvided]);
+  }, [originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -96,18 +108,18 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ scenarios, onMan
     setError(null);
 
     try {
-      const newImageBase64 = await refineImageWithText(selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt);
+      const newImageBase64 = await imageGenerationService.refineImageWithText(selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt);
       const newImageUrl = `data:image/png;base64,${newImageBase64}`;
       const updatedUrls = [...generatedImageUrls];
       updatedUrls[selectedGeneratedImageIndex] = newImageUrl;
-      setGeneratedImageUrls(updatedUrls);
+      onGeneratedImageUrlsChange(updatedUrls);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt]);
+  }, [generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange]);
 
   const handleOpenMaskEditor = (imageUrl: string) => {
       setImageToEditUrl(imageUrl);
@@ -129,13 +141,13 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ scenarios, onMan
       setError(null);
       
       try {
-        const editedImageBase64 = await refineImageWithMask(imageToEditUrl, maskBase64, prompt);
+        const editedImageBase64 = await imageGenerationService.refineImageWithMask(imageToEditUrl, maskBase64, prompt);
         const newImageUrl = `data:image/png;base64,${editedImageBase64}`;
 
         const updatedUrls = [...generatedImageUrls];
         updatedUrls[selectedGeneratedImageIndex] = newImageUrl;
 
-        setGeneratedImageUrls(updatedUrls);
+        onGeneratedImageUrlsChange(updatedUrls);
         handleCloseMaskEditor();
         setShowModificationUI(false);
       } catch (err) {
@@ -263,7 +275,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ scenarios, onMan
             className="md:col-span-3"
             onModifyClick={selectedGeneratedImageUrl ? () => setShowModificationUI(prev => !prev) : undefined}
             selectedImageIndex={selectedGeneratedImageIndex}
-            onSelectImageIndex={setSelectedGeneratedImageIndex}
+            onSelectImageIndex={onSelectedGeneratedImageIndexChange}
           />
         </div>
       </main>

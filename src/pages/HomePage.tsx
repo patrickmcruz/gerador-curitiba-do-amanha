@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ImageGenerator } from '../features/image-generator/components/ImageGenerator';
 import { Scenario, SCENARIOS } from '../features/image-generator/constants';
 import { ScenarioForm } from '../features/image-generator/components/ScenarioForm';
@@ -6,6 +6,12 @@ import { ScenarioForm } from '../features/image-generator/components/ScenarioFor
 export const HomePage: React.FC = () => {
   const [page, setPage] = useState<'main' | 'form'>('main');
   const [customPrompt, setCustomPrompt] = useState<string>('');
+
+  // State lifted from ImageGenerator
+  const [originalImage, setOriginalImage] = useState<File | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+  const [generatedImageUrls, setGeneratedImageUrls] = useState<string[] | null>(null);
+  const [selectedGeneratedImageIndex, setSelectedGeneratedImageIndex] = useState<number>(0);
 
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
     try {
@@ -16,11 +22,28 @@ export const HomePage: React.FC = () => {
       return SCENARIOS;
     }
   });
+  
+  const [selectedScenarioValue, setSelectedScenarioValue] = useState<string>(scenarios[0]?.value || '');
+
+  useEffect(() => {
+    // Ensure selectedScenarioValue is valid if scenarios change
+    if (!scenarios.find(s => s.value === selectedScenarioValue)) {
+      setSelectedScenarioValue(scenarios[0]?.value || '');
+    }
+  }, [scenarios, selectedScenarioValue]);
+
 
   const handleSaveScenarios = (updatedScenarios: Scenario[]) => {
     setScenarios(updatedScenarios);
     localStorage.setItem('futureScenarios', JSON.stringify(updatedScenarios));
     setPage('main');
+  };
+
+  const handleImageUpload = (file: File) => {
+    setOriginalImage(file);
+    setOriginalImageUrl(URL.createObjectURL(file));
+    setGeneratedImageUrls(null);
+    setSelectedGeneratedImageIndex(0);
   };
 
   return (
@@ -31,6 +54,16 @@ export const HomePage: React.FC = () => {
           onManageScenarios={() => setPage('form')}
           customPrompt={customPrompt}
           onCustomPromptChange={setCustomPrompt}
+          // Pass down lifted state and handlers
+          originalImage={originalImage}
+          originalImageUrl={originalImageUrl}
+          generatedImageUrls={generatedImageUrls}
+          selectedGeneratedImageIndex={selectedGeneratedImageIndex}
+          selectedScenarioValue={selectedScenarioValue}
+          onImageUpload={handleImageUpload}
+          onGeneratedImageUrlsChange={setGeneratedImageUrls}
+          onSelectedGeneratedImageIndexChange={setSelectedGeneratedImageIndex}
+          onSelectedScenarioValueChange={setSelectedScenarioValue}
         />
       ) : (
         <ScenarioForm
