@@ -11,7 +11,7 @@ interface ImageMaskEditorProps {
 export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onClose, onGenerate, isLoading }) => {
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null); // For custom cursor
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const isDrawing = useRef(false);
   const lastPos = useRef<{ x: number, y: number } | null>(null);
 
@@ -19,19 +19,17 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
   const [brushSize, setBrushSize] = useState(40);
   const [history, setHistory] = useState<ImageData[]>([]);
   
-  // State for custom cursor
   const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
   const [displayBrushSize, setDisplayBrushSize] = useState(brushSize);
 
   const getCanvasContext = useCallback(() => canvasRef.current?.getContext('2d'), []);
 
   const updateDisplayBrushSize = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width > 0) { // Avoid division by zero
-        const scale = canvas.width / rect.width;
-        // brushSize is in canvas pixels, so we divide by scale to get screen pixels.
+    const image = imageRef.current;
+    if (image) {
+      const imageRect = image.getBoundingClientRect();
+      if (imageRect.width > 0) {
+        const scale = image.naturalWidth / imageRect.width;
         setDisplayBrushSize(brushSize / scale);
       }
     }
@@ -45,7 +43,6 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
     };
   }, [updateDisplayBrushSize]);
 
-  // Initialize canvas when image loads
   const handleImageLoad = () => {
     const image = imageRef.current;
     const canvas = canvasRef.current;
@@ -56,27 +53,31 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       setHistory([]);
-      setTimeout(updateDisplayBrushSize, 0); // Update brush display size after layout
+      setTimeout(updateDisplayBrushSize, 0);
     }
   };
 
-  const getPointerPos = (e: React.MouseEvent | React.TouchEvent) => {
+  const getPointerPos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return null;
+    const image = imageRef.current;
+    if (!canvas || !image) return null;
 
-    const rect = canvas.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
     const clientX = 'touches' in e.nativeEvent ? e.nativeEvent.touches[0].clientX : e.nativeEvent.clientX;
     const clientY = 'touches' in e.nativeEvent ? e.nativeEvent.touches[0].clientY : e.nativeEvent.clientY;
     
-    // Calculate scale factor
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    if (clientX < imageRect.left || clientX > imageRect.right || clientY < imageRect.top || clientY > imageRect.bottom) {
+        return null;
+    }
+
+    const scaleX = canvas.width / imageRect.width;
+    const scaleY = canvas.height / imageRect.height;
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
+      x: (clientX - imageRect.left) * scaleX,
+      y: (clientY - imageRect.top) * scaleY,
     };
-  };
+  }, []);
 
   const saveToHistory = useCallback(() => {
     const ctx = getCanvasContext();
@@ -92,7 +93,7 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
     if (pos) {
       isDrawing.current = true;
       lastPos.current = pos;
-      saveToHistory(); // Save state before drawing starts
+      saveToHistory();
     }
   }, [getPointerPos, saveToHistory]);
 
@@ -149,12 +150,22 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
   
   const handleContainerMouseMove = (e: React.MouseEvent) => {
     const container = editorContainerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      setCursorPosition({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
+    const image = imageRef.current;
+    if (container && image) {
+        const containerRect = container.getBoundingClientRect();
+        const imageRect = image.getBoundingClientRect();
+        
+        const isOverImage = e.clientX >= imageRect.left && e.clientX <= imageRect.right && 
+                            e.clientY >= imageRect.top && e.clientY <= imageRect.bottom;
+
+        if (isOverImage) {
+            setCursorPosition({
+                x: e.clientX - containerRect.left,
+                y: e.clientY - containerRect.top,
+            });
+        } else {
+            setCursorPosition(null);
+        }
     }
     draw(e);
   };
@@ -163,7 +174,6 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
     setCursorPosition(null);
     stopDrawing();
   };
-
 
   return (
     <div 
@@ -202,8 +212,8 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
         />
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full"
-          style={{ objectFit: 'contain', mixBlendMode: 'screen', opacity: 0.5 }}
+          className="absolute top-0 left-0 w-full h-full opacity-50"
+          style={{ objectFit: 'contain', pointerEvents: 'none' }}
         />
         {cursorPosition && (
           <div 

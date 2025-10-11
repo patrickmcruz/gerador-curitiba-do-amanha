@@ -18,9 +18,9 @@ const generateInitialImages = async (
   try {
     const imagePart = await fileToGenerativePart(imageFile);
 
-    let promptText = `Re-imagine this image of Curitiba, Brazil, showing what it would look like ${year} years in the future in a ${scenario.label} scenario. ${scenario.description}`;
+    let promptText = `Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it ${year} years into the future, adopting a ${scenario.label} perspective. Focus on architectural changes, technological integration, and environmental aspects. ${scenario.description}`;
     if (customPrompt.trim()) {
-      promptText += ` Please incorporate these specific details: "${customPrompt}".`;
+      promptText += ` Please also incorporate these specific user-requested details: "${customPrompt}".`;
     }
     
     const textPart = { text: promptText };
@@ -46,7 +46,6 @@ const generateInitialImages = async (
       return null;
     };
 
-    // Make 3 parallel calls to generate 3 variations
     const imagePromises = [generateSingleImage(), generateSingleImage(), generateSingleImage()];
     const results = await Promise.all(imagePromises);
     const generatedImages = results.filter((img): img is string => img !== null);
@@ -77,11 +76,11 @@ const refineImageWithText = async (
   try {
     const imagePart = base64ToGenerativePart(baseImageBase64, "image/png");
 
-    let promptText = `This is a futuristic image of Curitiba, Brazil, in a ${scenario.label} scenario.`;
+    let promptText = `This is a photorealistic, futuristic image of Curitiba, Brazil, in a ${scenario.label} scenario.`;
     if (customPrompt.trim()) {
         promptText += ` The original creation was guided by this description: "${customPrompt}".`;
     }
-    promptText += ` Please generate a variation of this image that incorporates the following change: "${modificationPrompt}". Maintain the overall futuristic ${scenario.label} theme.`;
+    promptText += ` Generate a new version of this image that incorporates this specific modification: "${modificationPrompt}". It's crucial to maintain the established futuristic ${scenario.label} aesthetic, focusing on architecture, technology, and environment.`;
 
     const textPart = { text: promptText };
 
@@ -130,7 +129,7 @@ const refineImageWithMask = async (
         const baseImagePart = base64ToGenerativePart(baseImageBase64, 'image/png');
         const maskImagePart = base64ToGenerativePart(maskImageBase64, 'image/png');
 
-        const instructionalPrompt = `Using the second image provided as a mask (where the white areas indicate where to apply the change), please edit the first image. Apply the following change only to the masked area: "${prompt}". Return only the modified full image.`;
+        const instructionalPrompt = `You are an expert photo editor. Use the second image as a mask on the first image. The white area of the mask indicates the region to be modified. Apply the following instruction ONLY to the masked region: "${prompt}". The rest of the image must remain unchanged. Return only the complete, edited image.`;
 
         const textPart = { text: instructionalPrompt };
 

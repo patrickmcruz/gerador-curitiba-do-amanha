@@ -22,6 +22,15 @@ interface ImageGeneratorProps {
     onGeneratedImageUrlsChange: (urls: string[] | null) => void;
     onSelectedGeneratedImageIndexChange: (index: number) => void;
     onSelectedScenarioValueChange: (value: string) => void;
+    // Lifted Undo/Redo state
+    undoImageUrl: string | null;
+    undoIndex: number | null;
+    redoImageUrl: string | null;
+    redoIndex: number | null;
+    onUndoImageUrlChange: (url: string | null) => void;
+    onUndoIndexChange: (index: number | null) => void;
+    onRedoImageUrlChange: (url: string | null) => void;
+    onRedoIndexChange: (index: number | null) => void;
 }
 
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
@@ -38,14 +47,25 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onGeneratedImageUrlsChange,
     onSelectedGeneratedImageIndexChange,
     onSelectedScenarioValueChange,
+    undoImageUrl,
+    undoIndex,
+    redoImageUrl,
+    redoIndex,
+    onUndoImageUrlChange,
+    onUndoIndexChange,
+    onRedoImageUrlChange,
+    onRedoIndexChange,
 }) => {
   // Local state for UI interactions within this component
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showModificationUI, setShowModificationUI] = useState<boolean>(false);
+  const [isRefiningInFullScreen, setIsRefiningInFullScreen] = useState(false);
   const [modificationPrompt, setModificationPrompt] = useState<string>('');
   const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
   const [imageToEditUrl, setImageToEditUrl] = useState<string | null>(null);
+  
+  // Undo/Redo state is now lifted up
 
   const selectedScenario = scenarios.find(s => s.value === selectedScenarioValue) || scenarios[0];
   const selectedGeneratedImageUrl = generatedImageUrls ? generatedImageUrls[selectedGeneratedImageIndex] : null;
@@ -62,6 +82,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     setError(null);
     setShowModificationUI(false);
     setModificationPrompt('');
+    // The parent now handles resetting undo/redo state
   };
   
   const isPromptProvided = selectedScenario?.description?.trim() !== '' || customPrompt.trim() !== '';
@@ -82,6 +103,10 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onGeneratedImageUrlsChange(null);
     onSelectedGeneratedImageIndexChange(0);
     setShowModificationUI(false);
+    onUndoImageUrlChange(null);
+    onUndoIndexChange(null);
+    onRedoImageUrlChange(null);
+    onRedoIndexChange(null);
 
     try {
       const generatedImageBase64Array = await imageGenerationService.generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt);
@@ -92,7 +117,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange]);
+  }, [originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -107,19 +132,28 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     setIsLoading(true);
     setError(null);
 
+    const imageToUndo = selectedGeneratedImageUrl;
+
     try {
       const newImageBase64 = await imageGenerationService.refineImageWithText(selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt);
       const newImageUrl = `data:image/png;base64,${newImageBase64}`;
+      
       const updatedUrls = [...generatedImageUrls];
       updatedUrls[selectedGeneratedImageIndex] = newImageUrl;
+      
+      onUndoImageUrlChange(imageToUndo);
+      onUndoIndexChange(selectedGeneratedImageIndex);
+      onRedoImageUrlChange(null); // Clear redo history on new action
+      onRedoIndexChange(null);
       onGeneratedImageUrlsChange(updatedUrls);
+      setIsRefiningInFullScreen(false);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange]);
+  }, [generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleOpenMaskEditor = (imageUrl: string) => {
       setImageToEditUrl(imageUrl);
@@ -139,6 +173,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   
       setIsLoading(true);
       setError(null);
+
+      const imageToUndo = imageToEditUrl;
       
       try {
         const editedImageBase64 = await imageGenerationService.refineImageWithMask(imageToEditUrl, maskBase64, prompt);
@@ -147,9 +183,14 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         const updatedUrls = [...generatedImageUrls];
         updatedUrls[selectedGeneratedImageIndex] = newImageUrl;
 
+        onUndoImageUrlChange(imageToUndo);
+        onUndoIndexChange(selectedGeneratedImageIndex);
+        onRedoImageUrlChange(null); // Clear redo history on new action
+        onRedoIndexChange(null);
         onGeneratedImageUrlsChange(updatedUrls);
         handleCloseMaskEditor();
         setShowModificationUI(false);
+        setIsRefiningInFullScreen(false);
       } catch (err) {
         console.error(err);
         setError(err instanceof Error ? err.message : 'Um erro desconhecido ocorreu durante a edição mágica.');
@@ -157,6 +198,40 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         setIsLoading(false);
       }
   };
+
+  const handleUndoClick = useCallback(() => {
+    if (undoImageUrl && undoIndex !== null && generatedImageUrls) {
+        const currentImageUrl = generatedImageUrls[undoIndex];
+        const updatedUrls = [...generatedImageUrls];
+        updatedUrls[undoIndex] = undoImageUrl;
+        onGeneratedImageUrlsChange(updatedUrls);
+        
+        // Setup redo state
+        onRedoImageUrlChange(currentImageUrl);
+        onRedoIndexChange(undoIndex);
+        
+        // Clear undo state
+        onUndoImageUrlChange(null);
+        onUndoIndexChange(null);
+    }
+  }, [undoImageUrl, undoIndex, generatedImageUrls, onGeneratedImageUrlsChange, onRedoImageUrlChange, onRedoIndexChange, onUndoImageUrlChange, onUndoIndexChange]);
+  
+  const handleRedoClick = useCallback(() => {
+    if (redoImageUrl && redoIndex !== null && generatedImageUrls) {
+      const currentImageUrl = generatedImageUrls[redoIndex];
+      const updatedUrls = [...generatedImageUrls];
+      updatedUrls[redoIndex] = redoImageUrl;
+      onGeneratedImageUrlsChange(updatedUrls);
+
+      // Set up undo state again
+      onUndoImageUrlChange(currentImageUrl);
+      onUndoIndexChange(redoIndex);
+
+      // Clear redo state
+      onRedoImageUrlChange(null);
+      onRedoIndexChange(null);
+    }
+  }, [redoImageUrl, redoIndex, generatedImageUrls, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
 
   return (
@@ -276,6 +351,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             onModifyClick={selectedGeneratedImageUrl ? () => setShowModificationUI(prev => !prev) : undefined}
             selectedImageIndex={selectedGeneratedImageIndex}
             onSelectImageIndex={onSelectedGeneratedImageIndexChange}
+            isUndoAvailable={undoIndex === selectedGeneratedImageIndex}
+            onUndoClick={handleUndoClick}
+            isRedoAvailable={redoIndex === selectedGeneratedImageIndex}
+            onRedoClick={handleRedoClick}
+            // Fullscreen refinement props
+            isRefiningInFullScreen={isRefiningInFullScreen}
+            onIsRefiningInFullScreenChange={setIsRefiningInFullScreen}
+            modificationPrompt={modificationPrompt}
+            onModificationPromptChange={setModificationPrompt}
+            onModificationGenerateClick={handleModificationGenerateClick}
+            onOpenMaskEditor={handleOpenMaskEditor}
           />
         </div>
       </main>

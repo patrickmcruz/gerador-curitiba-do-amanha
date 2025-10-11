@@ -13,6 +13,13 @@ export const HomePage: React.FC = () => {
   const [generatedImageUrls, setGeneratedImageUrls] = useState<string[] | null>(null);
   const [selectedGeneratedImageIndex, setSelectedGeneratedImageIndex] = useState<number>(0);
 
+  // Lifted Undo/Redo state
+  const [undoImageUrl, setUndoImageUrl] = useState<string | null>(null);
+  const [undoIndex, setUndoIndex] = useState<number | null>(null);
+  const [redoImageUrl, setRedoImageUrl] = useState<string | null>(null);
+  const [redoIndex, setRedoIndex] = useState<number | null>(null);
+
+
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
     try {
       const savedScenarios = localStorage.getItem('futureScenarios');
@@ -44,6 +51,11 @@ export const HomePage: React.FC = () => {
     setOriginalImageUrl(URL.createObjectURL(file));
     setGeneratedImageUrls(null);
     setSelectedGeneratedImageIndex(0);
+    // Reset undo/redo state on new image upload
+    setUndoImageUrl(null);
+    setUndoIndex(null);
+    setRedoImageUrl(null);
+    setRedoIndex(null);
   };
 
   return (
@@ -64,6 +76,15 @@ export const HomePage: React.FC = () => {
           onGeneratedImageUrlsChange={setGeneratedImageUrls}
           onSelectedGeneratedImageIndexChange={setSelectedGeneratedImageIndex}
           onSelectedScenarioValueChange={setSelectedScenarioValue}
+          // Pass down undo/redo state and handlers
+          undoImageUrl={undoImageUrl}
+          undoIndex={undoIndex}
+          redoImageUrl={redoImageUrl}
+          redoIndex={redoIndex}
+          onUndoImageUrlChange={setUndoImageUrl}
+          onUndoIndexChange={setUndoIndex}
+          onRedoImageUrlChange={setRedoImageUrl}
+          onRedoIndexChange={setRedoIndex}
         />
       ) : (
         <ScenarioForm
