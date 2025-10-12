@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsPageProps {
   initialNumberOfGenerations: number;
@@ -8,6 +9,7 @@ interface SettingsPageProps {
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGenerations, initialIsDevMode, onSave, onCancel }) => {
+  const { t, i18n } = useTranslation();
   const [numberOfGenerations, setNumberOfGenerations] = useState(initialNumberOfGenerations);
   const [isDevMode, setIsDevMode] = useState(initialIsDevMode);
 
@@ -16,9 +18,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
   };
 
   const handleReset = () => {
-    // Esses são os valores padrão da aplicação definidos em HomePage.tsx
     setNumberOfGenerations(3);
     setIsDevMode(true);
+    i18n.changeLanguage('pt-BR');
   };
 
   const generationOptions = [1, 2, 3, 4];
@@ -26,17 +28,47 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
   return (
     <main className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-2xl shadow-2xl backdrop-blur-sm border border-gray-700 animate-fade-in">
       <h2 className="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-4">
-        Configurações do Aplicativo
+        {t('settings.title')}
       </h2>
       
       <div className="space-y-6">
+      <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+          <h3 className="text-lg font-semibold text-gray-200 mb-3">
+            {t('settings.language.title')}
+          </h3>
+          <div className="flex gap-3">
+            <button
+                onClick={() => i18n.changeLanguage('pt-BR')}
+                className={`px-6 py-2 text-sm font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue ${
+                  i18n.language === 'pt-BR'
+                    ? 'bg-brand-blue text-white shadow-md'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+            >
+              {t('settings.language.pt-BR')}
+            </button>
+            <button
+                onClick={() => i18n.changeLanguage('en')}
+                className={`px-6 py-2 text-sm font-semibold rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue ${
+                  i18n.language === 'en'
+                    ? 'bg-brand-blue text-white shadow-md'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+            >
+              {t('settings.language.en')}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            {t('settings.language.description')}
+          </p>
+        </div>
         <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
           <h3 className="text-lg font-semibold text-gray-200 mb-3">
-            Geração de Imagem
+            {t('settings.imageGeneration.title')}
           </h3>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Número de imagens geradas por vez
+              {t('settings.imageGeneration.label')}
             </label>
             <div className="flex gap-3">
               {generationOptions.map(num => (
@@ -54,17 +86,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
               ))}
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              Escolha quantas variações de imagem serão criadas a cada clique em "Re-imagine O Futuro".
+              {t('settings.imageGeneration.description')}
             </p>
           </div>
         </div>
         <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
           <h3 className="text-lg font-semibold text-gray-200 mb-3">
-            Modo de Desenvolvedor
+            {t('settings.devMode.title')}
           </h3>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Modo DEV
+              {t('settings.devMode.label')}
             </label>
             <div className="flex gap-3">
                 <button
@@ -75,7 +107,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
-                  Ativado
+                  {t('settings.devMode.on')}
                 </button>
                 <button
                   onClick={() => setIsDevMode(false)}
@@ -85,11 +117,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
-                  Desativado
+                  {t('settings.devMode.off')}
                 </button>
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              Quando ativado, o aplicativo gera imagens de teste localmente sem usar a API Gemini.
+              {t('settings.devMode.description')}
             </p>
           </div>
         </div>
@@ -99,21 +131,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
         <button
             onClick={handleReset}
             className="mr-auto bg-red-800 hover:bg-red-700 text-gray-200 font-bold py-2 px-6 rounded-lg transition-all text-sm"
-            title="Reseta as configurações para os valores padrão"
+            title={t('settings.buttons.reset')}
         >
-          Resetar Padrões
+          {t('settings.buttons.reset')}
         </button>
         <button
           onClick={onCancel}
           className="bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2 px-6 rounded-lg transition-all"
         >
-          Cancelar
+          {t('settings.buttons.cancel')}
         </button>
         <button
           onClick={handleSave}
           className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold py-2 px-6 rounded-lg transition-all"
         >
-          Salvar Configurações
+          {t('settings.buttons.save')}
         </button>
       </div>
     </main>

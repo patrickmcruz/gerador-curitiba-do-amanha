@@ -1,19 +1,13 @@
-import { Scenario } from "../../features/image-generator/constants";
-
 export interface ImageGenerationService {
   generateInitialImages(
     imageFile: File,
-    year: number,
-    scenario: Scenario,
-    customPrompt: string,
+    prompt: string,
     numberOfGenerations: number
   ): Promise<string[]>;
 
   refineImageWithText(
     baseImageBase64: string,
-    scenario: Scenario,
-    modificationPrompt: string,
-    customPrompt: string
+    prompt: string
   ): Promise<string>;
 
   refineImageWithMask(

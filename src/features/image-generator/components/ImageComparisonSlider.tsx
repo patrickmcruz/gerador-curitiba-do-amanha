@@ -1,4 +1,6 @@
+
 import React, { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ImageComparisonSliderProps {
   beforeImageUrl: string;
@@ -6,6 +8,7 @@ interface ImageComparisonSliderProps {
 }
 
 export const ImageComparisonSlider: React.FC<ImageComparisonSliderProps> = ({ beforeImageUrl, afterImageUrl }) => {
+  const { t } = useTranslation();
   const [sliderPosition, setSliderPosition] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -23,7 +26,6 @@ export const ImageComparisonSlider: React.FC<ImageComparisonSliderProps> = ({ be
 
   const startDrag = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     isDragging.current = true;
-    // For touch, we need to prevent default to avoid scrolling
     if (e.nativeEvent instanceof TouchEvent) {
       e.preventDefault();
     }
@@ -46,39 +48,36 @@ export const ImageComparisonSlider: React.FC<ImageComparisonSliderProps> = ({ be
       onMouseDown={startDrag}
       onMouseUp={stopDrag}
       onMouseMove={onDrag}
-      onMouseLeave={stopDrag} // Stop dragging if mouse leaves the container
+      onMouseLeave={stopDrag}
       onTouchStart={startDrag}
       onTouchEnd={stopDrag}
       onTouchMove={onDrag}
     >
-      {/* Generated Image (Right side - Base layer) */}
       <img
         src={afterImageUrl}
-        alt="Generated"
+        alt={t('imageDisplay.generatedLabel')}
         className="block w-full h-full object-contain pointer-events-none"
         draggable={false}
       />
       <div className="absolute top-2 right-2 bg-black/50 text-white text-xs font-bold px-2 py-1 rounded pointer-events-none">
-        Gerado
+        {t('imageDisplay.generatedLabel')}
       </div>
 
-      {/* Original Image (Left side - Top layer, clipped) */}
       <div
         className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none"
         style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
       >
         <img
           src={beforeImageUrl}
-          alt="Original"
+          alt={t('imageDisplay.originalLabel')}
           className="block w-full h-full object-contain pointer-events-none"
           draggable={false}
         />
         <div className="absolute top-2 left-2 bg-black/50 text-white text-xs font-bold px-2 py-1 rounded pointer-events-none">
-          Original
+          {t('imageDisplay.originalLabel')}
         </div>
       </div>
       
-      {/* Slider Divider */}
       <div
         className="absolute top-0 bottom-0 w-1 bg-white/80 shadow-lg pointer-events-none"
         style={{ left: `calc(${sliderPosition}% - 1px)` }}

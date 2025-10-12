@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SpinnerIcon, DownloadIcon, FullScreenIcon, CloseIcon, SparklesIcon, CompareIcon, ChevronLeftIcon, ChevronRightIcon, UndoIcon, RedoIcon, BrushIcon, DownloadAllIcon } from '../../../components/ui/Icons';
 import { ImageComparisonSlider } from './ImageComparisonSlider';
 
-// Declare JSZip as a global variable to be loaded from a script tag in index.html
 declare const JSZip: any;
 
 interface ImageDisplayProps {
@@ -17,14 +18,12 @@ interface ImageDisplayProps {
   onUndoClick?: () => void;
   isRedoAvailable?: boolean;
   onRedoClick?: () => void;
-  // Fullscreen refinement props
   isRefiningInFullScreen: boolean;
   onIsRefiningInFullScreenChange: (value: boolean) => void;
   modificationPrompt: string;
   onModificationPromptChange: (prompt: string) => void;
   onModificationGenerateClick: () => void;
   onOpenMaskEditor: (imageUrl: string) => void;
-  // Fullscreen state
   isFullScreen: boolean;
   onIsFullScreenChange: (value: boolean) => void;
 }
@@ -50,6 +49,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   isFullScreen,
   onIsFullScreenChange,
 }) => {
+  const { t } = useTranslation();
   const [isComparing, setIsComparing] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
 
@@ -57,8 +57,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
   const closeFullScreen = useCallback(() => {
     onIsFullScreenChange(false);
-    setIsComparing(false); // Reset comparison mode on close
-    onIsRefiningInFullScreenChange(false); // Reset refinement mode on close
+    setIsComparing(false);
+    onIsRefiningInFullScreenChange(false);
   }, [onIsFullScreenChange, onIsRefiningInFullScreenChange]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
@@ -113,7 +113,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   const handleDownloadAll = async () => {
     if (!imageUrls || imageUrls.length < 1) return;
     if (typeof JSZip === 'undefined') {
-        alert('Could not download all images. JSZip library not found.');
+        alert(t('imageDisplay.zipError'));
         return;
     }
 
@@ -142,7 +142,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
     } catch (err) {
         console.error("Failed to create zip file", err);
-        alert("Failed to create zip file. See console for details.");
+        alert(t('imageDisplay.zipCreateError'));
     } finally {
         setIsZipping(false);
     }
@@ -164,7 +164,6 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
   const { prev: prevImageUrl, next: nextImageUrl } = getNavUrls();
 
-
   return (
     <div className="w-full flex flex-col h-full">
       {subtitle && <p className="text-sm text-gray-400 mb-2">{subtitle}</p>}
@@ -174,19 +173,18 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
         {isLoading ? (
           <div className="flex flex-col items-center text-gray-400">
             <SpinnerIcon />
-            <p className="mt-2">Gerando imagem da cidade...</p>
+            <p className="mt-2">{t('imageGenerator.generatingButton')}</p>
           </div>
         ) : selectedImageUrl ? (
           <>
             <img 
               src={selectedImageUrl} 
-              alt="Resultado Gerado" 
+              alt={t('imageDisplay.generatedLabel')}
               className="object-cover w-full h-full"
               onClick={() => canBeMaximized && onIsFullScreenChange(true)}
               style={{ cursor: canBeMaximized ? 'zoom-in' : 'default' }}
             />
 
-            {/* Gallery Thumbnails */}
             {imageUrls && imageUrls.length > 1 && (
               <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/40 p-2 rounded-lg backdrop-blur-sm shadow-lg">
                 {imageUrls.map((url, index) => (
@@ -194,10 +192,10 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     key={index}
                     onClick={(e) => { e.stopPropagation(); onSelectImageIndex(index); }}
                     className={`w-20 h-20 rounded-md overflow-hidden border-2 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue ${selectedImageIndex === index ? 'border-brand-blue' : 'border-gray-500/50 hover:border-white'}`}
-                    aria-label={`Select variation ${index + 1}`}
-                    title={`Variation ${index + 1}`}
+                    aria-label={t('imageDisplay.variation', { index: index + 1 })}
+                    title={t('imageDisplay.variation', { index: index + 1 })}
                   >
-                    <img src={url} alt={`Variation ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={url} alt={t('imageDisplay.variation', { index: index + 1 })} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -208,8 +206,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); onUndoClick(); }}
                   className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                  aria-label="Undo modification"
-                  title="Desfazer"
+                  aria-label={t('imageDisplay.undo')}
+                  title={t('imageDisplay.undo')}
                 >
                   <UndoIcon />
                 </button>
@@ -218,8 +216,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); onRedoClick(); }}
                   className="bg-green-600 hover:bg-green-500 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                  aria-label="Redo modification"
-                  title="Refazer"
+                  aria-label={t('imageDisplay.redo')}
+                  title={t('imageDisplay.redo')}
                 >
                   <RedoIcon />
                 </button>
@@ -228,8 +226,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); onModifyClick(); }}
                   className="bg-purple-600 hover:bg-purple-500 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                  aria-label="Refine image"
-                  title="Refinar imagem"
+                  aria-label={t('imageDisplay.refine')}
+                  title={t('imageDisplay.refine')}
                 >
                   <SparklesIcon />
                 </button>
@@ -237,8 +235,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
               <button
                 onClick={(e) => { e.stopPropagation(); onIsFullScreenChange(true); }}
                 className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                aria-label="View image fullscreen"
-                title="Tela cheia"
+                aria-label={t('imageDisplay.fullscreen')}
+                title={t('imageDisplay.fullscreen')}
               >
                 <FullScreenIcon />
               </button>
@@ -247,8 +245,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     onClick={(e) => { e.stopPropagation(); handleDownloadAll(); }}
                     disabled={isZipping}
                     className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue disabled:bg-gray-600"
-                    aria-label="Download all variations"
-                    title="Baixar Todas"
+                    aria-label={t('imageDisplay.downloadAll')}
+                    title={t('imageDisplay.downloadAll')}
                   >
                     {isZipping ? <SpinnerIcon /> : <DownloadAllIcon />}
                   </button>
@@ -256,8 +254,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
               <button
                 onClick={(e) => { e.stopPropagation(); handleDownload(); }}
                 className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue"
-                aria-label="Download generated image"
-                title="Download"
+                aria-label={t('imageDisplay.download')}
+                title={t('imageDisplay.download')}
               >
                 <DownloadIcon />
               </button>
@@ -265,7 +263,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
           </>
         ) : (
           <div className="text-gray-500 text-center p-4">
-            <p>Sua imagem gerada aparecerá aqui</p>
+            <p>{t('imageDisplay.placeholder')}</p>
           </div>
         )}
       </div>
@@ -276,13 +274,12 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
           onClick={closeFullScreen}
           role="dialog"
           aria-modal="true"
-          aria-label="Fullscreen image view"
+          aria-label={t('imageDisplay.fullscreenTitle')}
         >
-          {/* Top Right Controls */}
           <button
             onClick={closeFullScreen}
             className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-30"
-            aria-label="Close fullscreen"
+            aria-label={t('imageDisplay.close')}
           >
             <CloseIcon />
           </button>
@@ -290,18 +287,18 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
           {isRefiningInFullScreen && (
             <div className="w-full max-w-3xl mx-auto p-4 bg-gray-900/70 rounded-lg animate-fade-in my-4 flex-shrink-0 z-20" onClick={(e) => e.stopPropagation()}>
                 <div className="animate-fade-in flex flex-col gap-3">
-                  <h2 className="text-lg font-semibold text-gray-200 text-center">4. Refine o Resultado</h2>
+                  <h2 className="text-lg font-semibold text-gray-200 text-center">{t('imageGenerator.refineTitle')}</h2>
                   <button
                     onClick={() => onOpenMaskEditor(selectedImageUrl!)}
                     disabled={isLoading || !selectedImageUrl}
                     className="w-full flex justify-center items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105"
                   >
                     <BrushIcon />
-                    Editar com Máscara (Beta)
+                    {t('imageGenerator.editWithMask')}
                   </button>
                   <div className="relative flex items-center">
                     <div className="flex-grow border-t border-gray-600"></div>
-                    <span className="flex-shrink mx-4 text-gray-500 text-sm">OU</span>
+                    <span className="flex-shrink mx-4 text-gray-500 text-sm">{t('imageGenerator.or')}</span>
                     <div className="flex-grow border-t border-gray-600"></div>
                   </div>
                   <textarea
@@ -309,39 +306,37 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     onChange={(e) => onModificationPromptChange(e.target.value)}
                     rows={2}
                     className="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-brand-purple focus:border-brand-purple transition"
-                    placeholder="Ex: adicione mais pessoas, remova árvores..."
+                    placeholder={t('imageGenerator.refinePlaceholder')}
                   />
                   <button
                     onClick={onModificationGenerateClick}
                     disabled={!modificationPrompt || isLoading || !selectedImageUrl}
                     className="w-full flex justify-center items-center gap-2 bg-brand-purple hover:bg-brand-purple/90 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-brand-purple/20"
                   >
-                    {isLoading ? ( <> <SpinnerIcon /> Refinando... </> ) : ( 'Gerar Variação (Texto)' )}
+                    {isLoading ? ( <> <SpinnerIcon /> {t('imageGenerator.refiningButton')} </> ) : ( t('imageGenerator.refineButton') )}
                   </button>
                 </div>
             </div>
           )}
 
-          {/* Main Content */}
           <div className="relative w-full h-full flex-grow flex items-center justify-center min-h-0" onClick={(e) => e.stopPropagation()}>
             {isComparing && originalImageUrl ? (
               <ImageComparisonSlider beforeImageUrl={originalImageUrl} afterImageUrl={selectedImageUrl} />
             ) : (
               <img 
                 src={selectedImageUrl} 
-                alt="Resultado gerado em tela cheia" 
+                alt={t('imageDisplay.generatedLabel')} 
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               />
             )}
             
-            {/* Navigation Controls */}
             {imageUrls && imageUrls.length > 1 && (
               <>
                 <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 flex items-center gap-6 opacity-70 hover:opacity-100 transition-opacity duration-300">
                   <button
                     onClick={handlePrevImage}
                     className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
-                    aria-label="Previous image"
+                    aria-label={t('imageDisplay.prev')}
                   >
                     <ChevronLeftIcon />
                   </button>
@@ -365,7 +360,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                   <button
                     onClick={handleNextImage}
                     className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
-                    aria-label="Next image"
+                    aria-label={t('imageDisplay.next')}
                   >
                     <ChevronRightIcon />
                   </button>
@@ -373,14 +368,13 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
               </>
             )}
 
-            {/* Bottom Controls */}
             <div className="absolute bottom-0 left-0 z-20 flex items-center gap-2 p-4">
               {isUndoAvailable && onUndoClick && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onUndoClick(); }}
                   className="bg-yellow-600 hover:bg-yellow-500 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                  aria-label="Undo modification"
-                  title="Desfazer"
+                  aria-label={t('imageDisplay.undo')}
+                  title={t('imageDisplay.undo')}
                 >
                   <UndoIcon />
                 </button>
@@ -389,8 +383,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); onRedoClick(); }}
                   className="bg-green-600 hover:bg-green-500 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                  aria-label="Redo modification"
-                  title="Refazer"
+                  aria-label={t('imageDisplay.redo')}
+                  title={t('imageDisplay.redo')}
                 >
                   <RedoIcon />
                 </button>
@@ -402,8 +396,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     onIsRefiningInFullScreenChange(!isRefiningInFullScreen);
                   }}
                   className={`font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white ${isRefiningInFullScreen ? 'bg-purple-500 text-white' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
-                  aria-label="Refine image"
-                  title="Refinar imagem"
+                  aria-label={t('imageDisplay.refine')}
+                  title={t('imageDisplay.refine')}
                 >
                   <SparklesIcon />
                 </button>
@@ -413,8 +407,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     onClick={(e) => { e.stopPropagation(); handleDownloadAll(); }}
                     disabled={isZipping}
                     className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue disabled:bg-gray-600"
-                    aria-label="Download all variations"
-                    title="Baixar Todas"
+                    aria-label={t('imageDisplay.downloadAll')}
+                    title={t('imageDisplay.downloadAll')}
                   >
                     {isZipping ? <SpinnerIcon /> : <DownloadAllIcon />}
                   </button>
@@ -422,8 +416,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
               <button
                 onClick={(e) => { e.stopPropagation(); handleDownload(); }}
                 className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue"
-                aria-label="Download generated image"
-                title="Download"
+                aria-label={t('imageDisplay.download')}
+                title={t('imageDisplay.download')}
               >
                 <DownloadIcon />
               </button>
@@ -433,8 +427,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); setIsComparing(p => !p); }}
                   className={`font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white ${isComparing ? 'bg-brand-blue text-white' : 'bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white'}`}
-                  aria-label="Compare with original"
-                  title="Compare with original"
+                  aria-label={t('imageDisplay.compare')}
+                  title={t('imageDisplay.compare')}
                 >
                   <CompareIcon />
                 </button>

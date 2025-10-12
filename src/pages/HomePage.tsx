@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ImageGenerator } from '../features/image-generator/components/ImageGenerator';
-import { Scenario, SCENARIOS, HistoryEntry } from '../features/image-generator/constants';
+import { Scenario, HistoryEntry } from '../features/image-generator/constants';
 import { ScenarioForm } from '../features/image-generator/components/ScenarioForm';
 import { SettingsPage } from './SettingsPage';
 
@@ -44,6 +45,7 @@ const compressImage = (dataUrl: string, targetWidth: number = 1024, quality: num
 };
 
 export const HomePage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [page, setPage] = useState<'main' | 'form' | 'settings'>('main');
   const [customPrompt, setCustomPrompt] = useState<string>('');
 
@@ -88,16 +90,28 @@ export const HomePage: React.FC = () => {
 
 
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
-    try {
-      const savedScenarios = localStorage.getItem('futureScenarios');
-      return savedScenarios ? JSON.parse(savedScenarios) : SCENARIOS;
-    } catch (e) {
-      console.error("Failed to parse scenarios from localStorage", e);
-      return SCENARIOS;
+    const savedScenarios = localStorage.getItem('futureScenarios');
+    if (savedScenarios) {
+        try {
+            return JSON.parse(savedScenarios);
+        } catch (e) {
+            console.error("Failed to parse scenarios from localStorage", e);
+        }
     }
+    return t('scenarios', { returnObjects: true }) as Scenario[];
   });
   
   const [selectedScenarioValue, setSelectedScenarioValue] = useState<string>(scenarios[0]?.value || '');
+  
+  useEffect(() => {
+    // This effect updates the default scenarios when the language changes,
+    // but only if the user hasn't saved their own custom scenarios.
+    const savedScenarios = localStorage.getItem('futureScenarios');
+    if (!savedScenarios) {
+      const newScenarios = t('scenarios', { returnObjects: true }) as Scenario[];
+      setScenarios(newScenarios);
+    }
+  }, [i18n.language, t]);
 
   useEffect(() => {
     // Ensure selectedScenarioValue is valid if scenarios change

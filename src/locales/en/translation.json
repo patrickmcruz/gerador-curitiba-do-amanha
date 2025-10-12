@@ -1,0 +1,168 @@
+{
+  "app": {
+    "title": "Hypervisor - Curitiba of Tomorrow"
+  },
+  "header": {
+    "title": "Hypervisor <1>Curitiba of Tomorrow</1>",
+    "subtitle": "Upload your own image to see Curitiba re-imagined by AI"
+  },
+  "footer": {
+    "text": "Developed by Hypervisor / IPPUC. An exploration of AI-driven creativity."
+  },
+  "settings": {
+    "title": "Application Settings",
+    "imageGeneration": {
+      "title": "Image Generation",
+      "label": "Number of images generated at a time",
+      "description": "Choose how many image variations are created with each click of \"Re-imagine The Future\"."
+    },
+    "devMode": {
+      "title": "Developer Mode",
+      "label": "DEV Mode",
+      "description": "When enabled, the app generates mock images locally without using the Gemini API.",
+      "on": "Enabled",
+      "off": "Disabled"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Select the interface language. Prompts sent to the AI will use the selected language.",
+      "pt-BR": "Portuguese (BR)",
+      "en": "English (USA)"
+    },
+    "buttons": {
+      "save": "Save Settings",
+      "cancel": "Cancel",
+      "reset": "Reset Defaults"
+    }
+  },
+  "scenarioForm": {
+    "title": "Customize Scenarios",
+    "scenarioLabel": "Button Text",
+    "scenarioDescription": "AI Prompt Description",
+    "remove": "Remove",
+    "add": "+ Add new scenario",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "scenario": "Scenario",
+    "removeAria": "Remove {{label}} scenario",
+    "labelPlaceholder": "e.g., Solar Punk",
+    "descriptionPlaceholder": "Describe the desired aesthetic for the AI...",
+    "newScenarioLabel": "New Scenario",
+    "newScenarioDescription": "A custom description for the new scenario."
+  },
+  "imageGenerator": {
+    "uploadTitle": "1. Upload image",
+    "scenarioTitle": "2. Choose a scenario",
+    "resultTitle": "3. See the Result",
+    "manageScenarios": "Scenarios",
+    "settings": "Settings",
+    "customPromptLabel": "Custom Prompt (optional)",
+    "customPromptPlaceholder": "e.g., with many pedestrians on the sidewalks, lots of cars on the roads...",
+    "promptSuggestions": "Prompt Suggestions",
+    "newSuggestions": "New suggestions",
+    "generateButton": "Re-imagine The Future",
+    "generatingButton": "Generating the Future...",
+    "promptError": "Add a description to the scenario or a custom prompt to continue.",
+    "uploadError": "Please upload an image first.",
+    "refineTitle": "4. Refine the Result",
+    "editWithMask": "Edit with Mask (Beta)",
+    "or": "OR",
+    "refinePlaceholder": "e.g., add more people, remove trees...",
+    "refineButton": "Generate Variation (Text)",
+    "refiningButton": "Refining...",
+    "refineError": "Please describe the changes you want to make.",
+    "refineSelectionError": "An image must be generated and selected first to create a variation.",
+    "tabResult": "Result",
+    "tabHistory": "History"
+  },
+  "imageUploader": {
+    "title": "Original Image",
+    "dragAndDrop": "<0>Click to upload</0> or drag and drop",
+    "fileTypes": "PNG, JPG, WEBP",
+    "uploadedImageAlt": "Uploaded image",
+    "changeImage": "Change Image",
+    "fullscreenTitle": "Original image preview"
+  },
+  "imageDisplay": {
+    "subtitle": "Future: +{{futureYearLabel}} ({{scenarioLabel}}) - Variation {{selectedIndex}}/{{total}}",
+    "futureYearLabel": "25 Years",
+    "placeholder": "Your generated image will appear here",
+    "variation": "Variation {{index}}",
+    "undo": "Undo",
+    "redo": "Redo",
+    "refine": "Refine image",
+    "fullscreen": "Fullscreen",
+    "download": "Download",
+    "downloadAll": "Download All",
+    "compare": "Compare with original",
+    "close": "Close fullscreen",
+    "fullscreenTitle": "Fullscreen image view",
+    "prev": "Previous image",
+    "next": "Next image",
+    "originalLabel": "Original",
+    "generatedLabel": "Generated",
+    "zipError": "Could not download all images. JSZip library not found.",
+    "zipCreateError": "Failed to create zip file. See console for details."
+  },
+  "history": {
+    "title": "Generation History",
+    "clear": "Clear History",
+    "placeholder": "The history of your generations will appear here.",
+    "restore": "Restore",
+    "revertError": "Could not restore history (snapshot not found).",
+    "entry": {
+      "initial": "Initial Generation",
+      "refinement": "Text Refinement",
+      "mask_edit": "Magic Edit",
+      "default": "Generation"
+    },
+    "timeAgo": {
+      "now": "just now",
+      "seconds_one": "{{count}} second ago",
+      "seconds_other": "{{count}} seconds ago",
+      "minutes_one": "{{count}} minute ago",
+      "minutes_other": "{{count}} minutes ago",
+      "hours_one": "{{count}} hour ago",
+      "hours_other": "{{count}} hours ago",
+      "days_one": "{{count}} day ago",
+      "days_other": "{{count}} days ago",
+      "months_one": "{{count}} month ago",
+      "months_other": "{{count}} months ago",
+      "years_one": "{{count}} year ago",
+      "years_other": "{{count}} years ago"
+    }
+  },
+  "maskEditor": {
+    "title": "Magic Edit",
+    "promptPlaceholder": "Describe what you want to change in the masked area...",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "brushSize": "Brush Size",
+    "undo": "Undo",
+    "clear": "Clear mask"
+  },
+  "scenarios": [
+    { "label": "Optimistic", "value": "Otimista", "description": "Clean energy, sustainable architecture, lush green spaces, and advanced public transportation." },
+    { "label": "Pessimistic", "value": "Pessimista", "description": "Pollution, urban decay, overpopulation, and a lack of green spaces." }
+  ],
+  "promptSuggestions": {
+    "Optimistic": [ "sustainable architecture", "flying electric vehicles", "lots of green areas", "integrated solar energy", "buildings with vertical gardens", "futuristic public transport", "people riding bikes", "clean and visible rivers", "holographic lighting", "biophilic design" ],
+    "Pessimistic": [ "polluted and dense atmosphere", "buildings in ruins or abandoned", "little vegetation", "heavy traffic of old vehicles", "excessive neon signs", "visible overpopulation", "surveillance structures", "acid rain", "obsolete and broken technology", "evident social inequality" ]
+  },
+  "apiErrors": {
+    "unsupportedFileType": "Unsupported file type: {{type}}. Please upload a PNG, JPG, or WEBP image.",
+    "invalidApiKey": "Invalid API key. Please ensure it is configured correctly.",
+    "quotaExceeded": "API quota exceeded. Please check your plan and billing details.",
+    "badRequest": "Bad request. The provided image may be unsupported, corrupt, or the prompt may be too long.",
+    "serviceUnavailable": "The AI service is temporarily unavailable. Please try again later.",
+    "generationFailed": "No image was generated. The model may have refused the request due to safety policies.",
+    "unknown": "An unknown error occurred. Please try again.",
+    "apiKeyMissing": "API_KEY environment variable not set.",
+    "invalidBase64": "Invalid base64 data provided."
+  },
+  "prompts": {
+    "initial": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the future, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technological integration, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
+    "refineWithText": "This is a photorealistic, futuristic image of Curitiba, Brazil, in a {{scenarioLabel}} scenario. The original creation was guided by this description: \"{{customPrompt}}\". Generate a new version of this image that incorporates this specific modification: \"{{modificationPrompt}}\". It's crucial to maintain the established futuristic {{scenarioLabel}} aesthetic, focusing on architecture, technology, and environment.",
+    "refineWithMask": "You are an expert photo editor. Use the second image as a mask on the first image. The white area of the mask indicates the region to be modified. Apply the following instruction ONLY to the masked region: \"{{prompt}}\". The rest of the image must remain unchanged. Return only the complete, edited image."
+  }
+}

@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { UploadIcon, FullScreenIcon, CloseIcon, PencilIcon, GearIcon } from '../../../components/ui/Icons';
 
 interface ImageUploaderProps {
@@ -9,136 +11,134 @@ interface ImageUploaderProps {
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imageUrl, className, onSettingsClick }) => {
+  const { t } = useTranslation();
+  const [isDragging, setIsDragging] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      onImageUpload(event.target.files[0]);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      onImageUpload(e.target.files[0]);
     }
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
   };
-  
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    if (event.dataTransfer.files && event.dataTransfer.files[0]) {
-        onImageUpload(event.dataTransfer.files[0]);
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      onImageUpload(e.dataTransfer.files[0]);
     }
   };
 
-  const handleAreaClick = () => {
+  const handleClick = () => {
     fileInputRef.current?.click();
   };
-
-  const toggleFullScreen = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsFullScreen(!isFullScreen);
-  };
+  
+  const closeFullScreen = useCallback(() => {
+    setIsFullScreen(false);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsFullScreen(false);
+        closeFullScreen();
       }
     };
-
     if (isFullScreen) {
-      document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
-    } else {
-      document.body.style.overflow = 'auto';
     }
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'auto';
     };
-  }, [isFullScreen]);
+  }, [isFullScreen, closeFullScreen]);
 
   return (
-    <div className={`flex flex-col h-full ${className || ''}`}>
-      <div className="flex justify-between items-center border-b border-gray-700 mb-2">
-        <h2 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue border-b-2 border-brand-blue rounded-t-lg -mb-px">
-            1. Suba a imagem
-        </h2>
-        <button
-          onClick={onSettingsClick}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg text-gray-400 border-transparent hover:text-white"
-          aria-label="Abrir configurações"
-          title="Configurações"
-        >
-          <GearIcon />
-          <span>Configurações</span>
-        </button>
-      </div>
+    <div className={`flex flex-col gap-4 ${className}`}>
+        <div className="flex justify-between items-center border-b border-gray-700">
+            <h2 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue border-b-2 border-brand-blue rounded-t-lg -mb-px">
+                {t('imageUploader.title', '1. Suba uma imagem')}
+            </h2>
+            <button
+                onClick={onSettingsClick}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg text-gray-400 border-transparent hover:text-white"
+                aria-label={t('settings.title', 'Configurações')}
+                title={t('settings.title', 'Configurações')}
+            >
+                <GearIcon />
+                <span>{t('settings.title', 'Configurações')}</span>
+            </button>
+        </div>
       <div
-        onClick={imageUrl ? () => toggleFullScreen() : handleAreaClick}
+        className={`relative group w-full flex-grow border-2 border-dashed rounded-lg transition-colors p-4 flex items-center justify-center text-center cursor-pointer
+          ${isDragging ? 'border-brand-blue bg-gray-700/50' : 'border-gray-600 hover:border-gray-500'}
+          ${imageUrl ? 'border-solid' : ''}
+        `}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="relative group flex flex-col items-center justify-center w-full flex-grow border-2 border-dashed border-gray-600 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-colors overflow-hidden"
-        style={{ cursor: imageUrl ? 'zoom-in' : 'pointer' }}
+        onClick={!imageUrl ? handleClick : undefined}
       >
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/png, image/jpeg, image/webp"
+        />
         {imageUrl ? (
           <>
-            <img src={imageUrl} alt="Uploaded preview" className="object-cover w-full h-full rounded-lg" />
-            <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <img src={imageUrl} alt={t('imageUploader.uploadedImageAlt', 'Imagem enviada')} className="object-contain w-full h-full max-h-[400px] rounded-md" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4">
               <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAreaClick();
-                }}
-                className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                aria-label="Change image"
-                title="Change image"
+                onClick={handleClick}
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-4 rounded-lg backdrop-blur-sm"
               >
                 <PencilIcon />
+                {t('imageUploader.changeImage', 'Trocar Imagem')}
               </button>
               <button
-                type="button"
-                onClick={toggleFullScreen}
-                className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                aria-label="View image fullscreen"
+                onClick={() => setIsFullScreen(true)}
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-4 rounded-lg backdrop-blur-sm"
               >
                 <FullScreenIcon />
+                {t('imageDisplay.fullscreen', 'Tela Cheia')}
               </button>
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400">
+          <div className="text-gray-400">
             <UploadIcon />
-            <p className="mb-2 text-sm"><span className="font-semibold">Clique para upload</span> ou arraste pra cá</p>
-            <p className="text-xs">PNG, JPG ou WEBP</p>
+            <p className="font-semibold"><Trans i18nKey="imageUploader.dragAndDrop" defaults='<0>Clique para enviar</0> ou arraste'><span className="text-brand-blue">Clique para enviar</span> ou arraste</Trans></p>
+            <p className="text-sm text-gray-500">{t('imageUploader.fileTypes', 'PNG, JPG, WEBP')}</p>
           </div>
         )}
       </div>
-
-      <input ref={fileInputRef} id="dropzone-file" type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleFileChange} />
-
       {isFullScreen && imageUrl && (
         <div 
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-sm"
-          onClick={() => toggleFullScreen()}
+          onClick={closeFullScreen}
           role="dialog"
           aria-modal="true"
-          aria-label="Fullscreen image view"
+          aria-label={t('imageUploader.fullscreenTitle', 'Visualização da imagem original')}
         >
-            <button
-              onClick={() => toggleFullScreen()}
-              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-10"
-              aria-label="Close fullscreen"
-            >
-              <CloseIcon />
-            </button>
-            <img 
-              src={imageUrl} 
-              alt="Uploaded image fullscreen" 
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
+          <button
+            onClick={closeFullScreen}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors"
+            aria-label={t('imageDisplay.close', 'Fechar')}
+          >
+            <CloseIcon />
+          </button>
+          <img src={imageUrl} alt={t('imageUploader.uploadedImageAlt', 'Imagem enviada')} className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
       )}
     </div>

@@ -3,9 +3,7 @@ const SUPPORTED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const fileToGenerativePart = async (file: File) => {
   if (!SUPPORTED_MIME_TYPES.includes(file.type)) {
     throw new Error(
-      `Unsupported file type: ${
-        file.type || "unknown"
-      }. Please upload a PNG, JPG, or WEBP image.`
+      `apiErrors.unsupportedFileType,${file.type || "unknown"}`
     );
   }
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -21,7 +19,7 @@ export const fileToGenerativePart = async (file: File) => {
 export const base64ToGenerativePart = (base64Data: string, mimeType: string) => {
   const data = base64Data.startsWith('data:') ? base64Data.split(',')[1] : base64Data;
   if (!data) {
-    throw new Error('Invalid base64 data provided.');
+    throw new Error('apiErrors.invalidBase64');
   }
   return {
     inlineData: { data, mimeType },
@@ -32,32 +30,35 @@ export const handleApiError = (error: any): string => {
   console.error("Gemini API call failed:", error);
     
   const errorMessage = error.message?.toLowerCase() || "";
-  let userMessage;
+  let userMessageKey;
 
-  if (errorMessage.includes("tipo de arquivo não suportado")) {
-      userMessage = error.message;
-  } else if (errorMessage.includes("chave de api inválida")) {
-    userMessage = "Chave de API inválida. Certifique-se de que ela esteja configurada corretamente.";
+  // Handle specific error messages that are thrown as keys from within the app
+  if (errorMessage.startsWith("apiErrors.")) {
+      return error.message;
+  }
+
+  if (errorMessage.includes("unsupported file type")) {
+    const fileType = error.message.split(' ').pop() || 'unknown';
+    userMessageKey = `apiErrors.unsupportedFileType,${fileType}`;
+  } else if (errorMessage.includes("api key") && errorMessage.includes("invalid")) {
+    userMessageKey = "apiErrors.invalidApiKey";
   } else if (
     errorMessage.includes("quota") ||
     errorMessage.includes("billing")
   ) {
-    userMessage =
-      "Cota de API excedida. Por favor verifique seu plano e detalhes de cobrança.";
+    userMessageKey = "apiErrors.quotaExceeded";
   } else if (errorMessage.includes("400")) {
-    userMessage =
-      "Requisição inválida. A imagem enviada pode estar em formato não suportado, quebrada ou muito longa.";
+    userMessageKey = "apiErrors.badRequest";
   } else if (
     errorMessage.includes("500") ||
     errorMessage.includes("service")
   ) {
-    userMessage =
-      "O serviço de IA está temporariamente indisponível. Por favor tente novamente mais tarde.";
-  } else if (errorMessage.includes("nenhuma imagem foi gerada")) {
-    userMessage = error.message; // Use the specific message for safety refusals
+    userMessageKey = "apiErrors.serviceUnavailable";
+  } else if (errorMessage.includes("no image was generated")) {
+    userMessageKey = "apiErrors.generationFailed";
   } else {
-    userMessage = error.message || "Ocorreu um erro desconhecido. Por favor tente novamente.";
+    userMessageKey = "apiErrors.unknown";
   }
   
-  return userMessage;
+  return userMessageKey;
 };

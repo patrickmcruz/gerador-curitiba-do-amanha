@@ -1,4 +1,6 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CloseIcon, SpinnerIcon, BrushIcon, UndoIcon, TrashIcon } from '../../../components/ui/Icons';
 
 interface ImageMaskEditorProps {
@@ -9,6 +11,7 @@ interface ImageMaskEditorProps {
 }
 
 export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onClose, onGenerate, isLoading }) => {
+  const { t } = useTranslation();
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -180,17 +183,15 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
       className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fade-in backdrop-blur-md"
       role="dialog"
       aria-modal="true"
-      aria-label="Magic Edit with Mask"
+      aria-label={t('maskEditor.title')}
     >
-      {/* Top Controls */}
       <div className="w-full max-w-6xl flex justify-between items-center mb-4 px-2">
-        <h2 className="text-xl font-bold text-white">Edição Mágica</h2>
+        <h2 className="text-xl font-bold text-white">{t('maskEditor.title')}</h2>
         <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors">
           <CloseIcon />
         </button>
       </div>
 
-      {/* Main Content Area */}
       <div 
         ref={editorContainerRef}
         className="relative w-full h-full max-w-6xl max-h-[calc(100vh-200px)] flex items-center justify-center cursor-none"
@@ -229,7 +230,6 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
         )}
       </div>
 
-      {/* Bottom Controls */}
       <div className="w-full max-w-6xl mt-4 p-4 bg-gray-800/50 rounded-lg flex flex-col md:flex-row items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-white">
@@ -241,13 +241,13 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
               value={brushSize}
               onChange={e => setBrushSize(Number(e.target.value))}
               className="w-32 cursor-pointer"
-              aria-label="Tamanho do Pincel"
+              aria-label={t('maskEditor.brushSize')}
             />
           </div>
-          <button onClick={handleUndo} disabled={history.length === 0} className="p-2 text-white hover:bg-gray-700 rounded-full disabled:text-gray-500 disabled:cursor-not-allowed" title="Desfazer">
+          <button onClick={handleUndo} disabled={history.length === 0} className="p-2 text-white hover:bg-gray-700 rounded-full disabled:text-gray-500 disabled:cursor-not-allowed" title={t('maskEditor.undo')}>
             <UndoIcon />
           </button>
-          <button onClick={handleClear} className="p-2 text-white hover:bg-gray-700 rounded-full" title="Clear mask">
+          <button onClick={handleClear} className="p-2 text-white hover:bg-gray-700 rounded-full" title={t('maskEditor.clear')}>
             <TrashIcon />
           </button>
         </div>
@@ -256,7 +256,7 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Descreva o que você quer mudar na area marcada..."
+            placeholder={t('maskEditor.promptPlaceholder')}
             className="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-brand-purple"
           />
           <button
@@ -264,7 +264,7 @@ export const ImageMaskEditor: React.FC<ImageMaskEditorProps> = ({ imageUrl, onCl
             disabled={!prompt || isLoading}
             className="flex items-center gap-2 bg-brand-purple hover:bg-brand-purple/90 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {isLoading ? <><SpinnerIcon /> Gerando...</> : 'Gerar'}
+            {isLoading ? <><SpinnerIcon /> {t('maskEditor.generating')}</> : t('maskEditor.generate')}
           </button>
         </div>
       </div>

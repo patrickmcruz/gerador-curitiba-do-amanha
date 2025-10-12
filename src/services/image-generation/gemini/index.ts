@@ -1,30 +1,21 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import { Scenario } from "../../../features/image-generator/constants";
 import { ImageGenerationService } from "../types";
 import { fileToGenerativePart, base64ToGenerativePart, handleApiError } from './utils';
 
 
 const generateInitialImages = async (
   imageFile: File,
-  year: number,
-  scenario: Scenario,
-  customPrompt: string,
+  prompt: string,
   numberOfGenerations: number
 ): Promise<string[]> => {
   if (!process.env.API_KEY) {
-    throw new Error("Chave API_KEY não configurada.");
+    throw new Error("apiErrors.apiKeyMissing");
   }
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
     const imagePart = await fileToGenerativePart(imageFile);
-
-    let promptText = `Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it ${year} years into the future, adopting a ${scenario.label} perspective. Focus on architectural changes, technological integration, and environmental aspects. ${scenario.description}`;
-    if (customPrompt.trim()) {
-      promptText += ` Please also incorporate these specific user-requested details: "${customPrompt}".`;
-    }
-    
-    const textPart = { text: promptText };
+    const textPart = { text: prompt };
 
     const generateSingleImage = async () => {
       const response = await ai.models.generateContent({
@@ -53,9 +44,7 @@ const generateInitialImages = async (
 
 
     if (generatedImages.length === 0) {
-      throw new Error(
-        "Nenhuma imagem foi gerada. A modelo pode ter recusado a solicitação devido a políticas de segurança."
-      );
+      throw new Error("apiErrors.generationFailed");
     }
     return generatedImages;
   } catch (error: any) {
@@ -65,25 +54,16 @@ const generateInitialImages = async (
 
 const refineImageWithText = async (
   baseImageBase64: string,
-  scenario: Scenario,
-  modificationPrompt: string,
-  customPrompt: string
+  prompt: string
 ): Promise<string> => {
   if (!process.env.API_KEY) {
-    throw new Error("Variável de ambiente API_KEY não definida.");
+    throw new Error("apiErrors.apiKeyMissing");
   }
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
     const imagePart = base64ToGenerativePart(baseImageBase64, "image/png");
-
-    let promptText = `This is a photorealistic, futuristic image of Curitiba, Brazil, in a ${scenario.label} scenario.`;
-    if (customPrompt.trim()) {
-        promptText += ` The original creation was guided by this description: "${customPrompt}".`;
-    }
-    promptText += ` Generate a new version of this image that incorporates this specific modification: "${modificationPrompt}". It's crucial to maintain the established futuristic ${scenario.label} aesthetic, focusing on architecture, technology, and environment.`;
-
-    const textPart = { text: promptText };
+    const textPart = { text: prompt };
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-image",
@@ -106,9 +86,7 @@ const refineImageWithText = async (
     }
 
     if (!generatedImage) {
-      throw new Error(
-        "Nenhuma imagem foi gerada. A modelo pode ter recusado a solicitação devido a políticas de segurança."
-      );
+      throw new Error("apiErrors.generationFailed");
     }
     return generatedImage;
   } catch (error: any) {
@@ -122,17 +100,14 @@ const refineImageWithMask = async (
   prompt: string
 ): Promise<string> => {
     if (!process.env.API_KEY) {
-        throw new Error("Variavel de ambiente API_KEY nao configurada.");
+        throw new Error("apiErrors.apiKeyMissing");
     }
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
         const baseImagePart = base64ToGenerativePart(baseImageBase64, 'image/png');
         const maskImagePart = base64ToGenerativePart(maskImageBase64, 'image/png');
-
-        const instructionalPrompt = `You are an expert photo editor. Use the second image as a mask on the first image. The white area of the mask indicates the region to be modified. Apply the following instruction ONLY to the masked region: "${prompt}". The rest of the image must remain unchanged. Return only the complete, edited image.`;
-
-        const textPart = { text: instructionalPrompt };
+        const textPart = { text: prompt };
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-image",
@@ -155,7 +130,7 @@ const refineImageWithMask = async (
         }
 
         if (!generatedImage) {
-          throw new Error("Nenhuma imagem gerada. O modelo pode ter recusado a requisição devido a políticas de segurança.");
+          throw new Error("apiErrors.generationFailed");
         }
         return generatedImage;
     } catch (error: any) {
