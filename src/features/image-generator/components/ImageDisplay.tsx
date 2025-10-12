@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SpinnerIcon, DownloadIcon, FullScreenIcon, CloseIcon, SparklesIcon, CompareIcon, ChevronLeftIcon, ChevronRightIcon, UndoIcon, RedoIcon, BrushIcon } from '../../../components/ui/Icons';
+import { SpinnerIcon, DownloadIcon, FullScreenIcon, CloseIcon, SparklesIcon, CompareIcon, ChevronLeftIcon, ChevronRightIcon, UndoIcon, RedoIcon, BrushIcon, DownloadAllIcon } from '../../../components/ui/Icons';
 import { ImageComparisonSlider } from './ImageComparisonSlider';
+
+// Declare JSZip as a global variable to be loaded from a script tag in index.html
+declare const JSZip: any;
 
 interface ImageDisplayProps {
   subtitle?: string;
@@ -44,6 +47,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
 
   const selectedImageUrl = imageUrls ? imageUrls[selectedImageIndex] : null;
 
@@ -100,6 +104,44 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+  
+  const handleDownloadAll = async () => {
+    if (!imageUrls || imageUrls.length < 1) return;
+    if (typeof JSZip === 'undefined') {
+        alert('Could not download all images. JSZip library not found.');
+        return;
+    }
+
+    setIsZipping(true);
+    try {
+        const zip = new JSZip();
+
+        const promises = imageUrls.map(async (url, index) => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const extension = blob.type.split('/')[1] || 'png';
+            zip.file(`variation-${index + 1}.${extension}`, blob);
+        });
+
+        await Promise.all(promises);
+
+        const content = await zip.generateAsync({ type: "blob" });
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = 'curitiba-do-amanha-variations.zip';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+
+    } catch (err) {
+        console.error("Failed to create zip file", err);
+        alert("Failed to create zip file. See console for details.");
+    } finally {
+        setIsZipping(false);
+    }
   };
 
   const canBeMaximized = selectedImageUrl && !isLoading;
@@ -196,6 +238,17 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
               >
                 <FullScreenIcon />
               </button>
+              {imageUrls && imageUrls.length > 1 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDownloadAll(); }}
+                    disabled={isZipping}
+                    className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue disabled:bg-gray-600"
+                    aria-label="Download all variations"
+                    title="Baixar Todas"
+                  >
+                    {isZipping ? <SpinnerIcon /> : <DownloadAllIcon />}
+                  </button>
+              )}
               <button
                 onClick={(e) => { e.stopPropagation(); handleDownload(); }}
                 className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue"
@@ -350,6 +403,17 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 >
                   <SparklesIcon />
                 </button>
+              )}
+               {imageUrls && imageUrls.length > 1 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDownloadAll(); }}
+                    disabled={isZipping}
+                    className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue disabled:bg-gray-600"
+                    aria-label="Download all variations"
+                    title="Baixar Todas"
+                  >
+                    {isZipping ? <SpinnerIcon /> : <DownloadAllIcon />}
+                  </button>
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); handleDownload(); }}
