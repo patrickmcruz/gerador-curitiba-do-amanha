@@ -16,3 +16,14 @@ export const SCENARIOS: Scenario[] = [
     description: ""
   },
 ];
+
+export interface HistoryEntry {
+  id: string;
+  timestamp: number;
+  type: 'initial' | 'refinement' | 'mask_edit';
+  prompt: string;
+  thumbnailUrl: string;
+  // State to restore
+  generatedImageUrls: string[];
+  selectedGeneratedImageIndex: number;
+}

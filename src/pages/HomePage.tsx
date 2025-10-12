@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ImageGenerator } from '../features/image-generator/components/ImageGenerator';
-import { Scenario, SCENARIOS } from '../features/image-generator/constants';
+import { Scenario, SCENARIOS, HistoryEntry } from '../features/image-generator/constants';
 import { ScenarioForm } from '../features/image-generator/components/ScenarioForm';
 
 export const HomePage: React.FC = () => {
@@ -18,6 +18,10 @@ export const HomePage: React.FC = () => {
   const [undoIndex, setUndoIndex] = useState<number | null>(null);
   const [redoImageUrl, setRedoImageUrl] = useState<string | null>(null);
   const [redoIndex, setRedoIndex] = useState<number | null>(null);
+
+  // State for image history
+  const [currentImageId, setCurrentImageId] = useState<string | null>(null);
+  const [generationHistory, setGenerationHistory] = useState<HistoryEntry[]>([]);
 
 
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
@@ -39,6 +43,25 @@ export const HomePage: React.FC = () => {
     }
   }, [scenarios, selectedScenarioValue]);
 
+  // Save history to localStorage whenever relevant state changes
+  useEffect(() => {
+    if (currentImageId && originalImageUrl) {
+      const stateToSave = {
+        originalImageUrl,
+        generatedImageUrls,
+        selectedGeneratedImageIndex,
+        selectedScenarioValue,
+        customPrompt,
+        generationHistory,
+      };
+      try {
+        localStorage.setItem(`history_${currentImageId}`, JSON.stringify(stateToSave));
+      } catch (e) {
+        console.error("Failed to save history to localStorage. It might be full.", e);
+      }
+    }
+  }, [currentImageId, originalImageUrl, generatedImageUrls, selectedGeneratedImageIndex, selectedScenarioValue, customPrompt, generationHistory]);
+
 
   const handleSaveScenarios = (updatedScenarios: Scenario[]) => {
     setScenarios(updatedScenarios);
@@ -46,17 +69,50 @@ export const HomePage: React.FC = () => {
     setPage('main');
   };
 
-  const handleImageUpload = (file: File) => {
-    setOriginalImage(file);
-    setOriginalImageUrl(URL.createObjectURL(file));
-    setGeneratedImageUrls(null);
-    setSelectedGeneratedImageIndex(0);
-    // Reset undo/redo state on new image upload
+  const handleImageUpload = useCallback((file: File) => {
+    const imageId = `${file.name}-${file.size}-${file.lastModified}`;
+    setCurrentImageId(imageId);
+
+    const savedStateJSON = localStorage.getItem(`history_${imageId}`);
+    
+    const loadNewImage = (imageFile: File) => {
+      setOriginalImage(imageFile);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setOriginalImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(imageFile);
+      setGeneratedImageUrls(null);
+      setSelectedGeneratedImageIndex(0);
+      setCustomPrompt('');
+      setSelectedScenarioValue(scenarios[0]?.value || '');
+      setGenerationHistory([]);
+    };
+
+    if (savedStateJSON) {
+        try {
+            const savedState = JSON.parse(savedStateJSON);
+            setOriginalImage(file);
+            setOriginalImageUrl(savedState.originalImageUrl);
+            setGeneratedImageUrls(savedState.generatedImageUrls);
+            setSelectedGeneratedImageIndex(savedState.selectedGeneratedImageIndex);
+            setSelectedScenarioValue(savedState.selectedScenarioValue);
+            setCustomPrompt(savedState.customPrompt || '');
+            setGenerationHistory(savedState.generationHistory || []);
+        } catch (e) {
+            console.error("Failed to parse saved history, loading as new image.", e);
+            loadNewImage(file);
+        }
+    } else {
+        loadNewImage(file);
+    }
+    
+    // Reset undo/redo on any new image load
     setUndoImageUrl(null);
     setUndoIndex(null);
     setRedoImageUrl(null);
     setRedoIndex(null);
-  };
+  }, [scenarios]);
 
   return (
     <>
@@ -85,6 +141,9 @@ export const HomePage: React.FC = () => {
           onUndoIndexChange={setUndoIndex}
           onRedoImageUrlChange={setRedoImageUrl}
           onRedoIndexChange={setRedoIndex}
+          // History state
+          generationHistory={generationHistory}
+          onGenerationHistoryChange={setGenerationHistory}
         />
       ) : (
         <ScenarioForm

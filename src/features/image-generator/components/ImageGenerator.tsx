@@ -3,9 +3,10 @@ import { ImageUploader } from './ImageUploader';
 import { ImageDisplay } from './ImageDisplay';
 import { ScenarioSelector } from './ScenarioSelector';
 import { ImageMaskEditor } from './ImageMaskEditor';
+import { GenerationHistoryPanel } from './GenerationHistoryPanel';
 import { imageGenerationService } from '../../../services/image-generation';
-import { Scenario } from '../constants';
-import { PlusIcon, SpinnerIcon, BrushIcon } from '../../../components/ui/Icons';
+import { Scenario, HistoryEntry } from '../constants';
+import { PlusIcon, SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon } from '../../../components/ui/Icons';
 
 interface ImageGeneratorProps {
     scenarios: Scenario[];
@@ -31,6 +32,9 @@ interface ImageGeneratorProps {
     onUndoIndexChange: (index: number | null) => void;
     onRedoImageUrlChange: (url: string | null) => void;
     onRedoIndexChange: (index: number | null) => void;
+    // History state
+    generationHistory: HistoryEntry[];
+    onGenerationHistoryChange: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
 }
 
 const createMockImageWithText = (imageFile: File, text: string): Promise<string> => {
@@ -136,6 +140,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onUndoIndexChange,
     onRedoImageUrlChange,
     onRedoIndexChange,
+    generationHistory,
+    onGenerationHistoryChange,
 }) => {
   // Local state for UI interactions within this component
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -146,9 +152,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
   const [imageToEditUrl, setImageToEditUrl] = useState<string | null>(null);
   const [isDevMode, setIsDevMode] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'result' | 'history'>('result');
   
-  // Undo/Redo state is now lifted up
-
   const selectedScenario = scenarios.find(s => s.value === selectedScenarioValue) || scenarios[0];
   const selectedGeneratedImageUrl = generatedImageUrls ? generatedImageUrls[selectedGeneratedImageIndex] : null;
   const futureYearValue = 25;
@@ -164,7 +169,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     setError(null);
     setShowModificationUI(false);
     setModificationPrompt('');
-    // The parent now handles resetting undo/redo state
+    setActiveTab('result');
   };
   
   const isPromptProvided = selectedScenario?.description?.trim() !== '' || customPrompt.trim() !== '';
@@ -189,6 +194,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onUndoIndexChange(null);
     onRedoImageUrlChange(null);
     onRedoIndexChange(null);
+    setActiveTab('result');
 
     if (isDevMode) {
       setTimeout(async () => {
@@ -201,6 +207,16 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               createMockImageWithText(originalImage, `[DEV MOCK 3] ${fullPrompt}`),
             ]);
             onGeneratedImageUrlsChange(mockUrls);
+            const newHistoryEntry: HistoryEntry = {
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                type: 'initial',
+                prompt: fullPrompt,
+                thumbnailUrl: mockUrls[0],
+                generatedImageUrls: mockUrls,
+                selectedGeneratedImageIndex: 0,
+            };
+            onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
           }
@@ -212,14 +228,27 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 
     try {
       const generatedImageBase64Array = await imageGenerationService.generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt);
-      onGeneratedImageUrlsChange(generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`));
+      const newUrls = generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`);
+      onGeneratedImageUrlsChange(newUrls);
+
+      const fullPrompt = `Cenário: ${selectedScenario.label}. ${customPrompt || selectedScenario.description}`;
+      const newHistoryEntry: HistoryEntry = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        type: 'initial',
+        prompt: fullPrompt,
+        thumbnailUrl: newUrls[0],
+        generatedImageUrls: newUrls,
+        selectedGeneratedImageIndex: 0,
+      };
+      onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -233,6 +262,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 
     setIsLoading(true);
     setError(null);
+    setActiveTab('result');
 
     if (isDevMode) {
         setTimeout(async () => {
@@ -248,6 +278,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               onRedoImageUrlChange(null); // Clear redo history on new action
               onRedoIndexChange(null);
               onGeneratedImageUrlsChange(updatedUrls);
+
+              const newHistoryEntry: HistoryEntry = {
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                type: 'refinement',
+                prompt: modificationPrompt,
+                thumbnailUrl: newMockUrl,
+                generatedImageUrls: updatedUrls,
+                selectedGeneratedImageIndex: selectedGeneratedImageIndex,
+              };
+              onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
               setIsRefiningInFullScreen(false);
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
@@ -272,6 +313,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       onRedoImageUrlChange(null); // Clear redo history on new action
       onRedoIndexChange(null);
       onGeneratedImageUrlsChange(updatedUrls);
+
+      const newHistoryEntry: HistoryEntry = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        type: 'refinement',
+        prompt: modificationPrompt,
+        thumbnailUrl: newImageUrl,
+        generatedImageUrls: updatedUrls,
+        selectedGeneratedImageIndex: selectedGeneratedImageIndex,
+      };
+      onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
       setIsRefiningInFullScreen(false);
     } catch (err) {
       console.error(err);
@@ -279,7 +331,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+  }, [isDevMode, originalImage, generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange]);
 
   const handleOpenMaskEditor = (imageUrl: string) => {
       setImageToEditUrl(imageUrl);
@@ -299,6 +351,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   
       setIsLoading(true);
       setError(null);
+      setActiveTab('result');
 
       if (isDevMode) {
         setTimeout(async () => {
@@ -314,6 +367,18 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               onRedoImageUrlChange(null); // Clear redo history on new action
               onRedoIndexChange(null);
               onGeneratedImageUrlsChange(updatedUrls);
+
+              const newHistoryEntry: HistoryEntry = {
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                type: 'mask_edit',
+                prompt: prompt,
+                thumbnailUrl: newMockUrl,
+                generatedImageUrls: updatedUrls,
+                selectedGeneratedImageIndex: selectedGeneratedImageIndex,
+              };
+              onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+
               handleCloseMaskEditor();
               setShowModificationUI(false);
               setIsRefiningInFullScreen(false);
@@ -340,6 +405,18 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         onRedoImageUrlChange(null); // Clear redo history on new action
         onRedoIndexChange(null);
         onGeneratedImageUrlsChange(updatedUrls);
+
+        const newHistoryEntry: HistoryEntry = {
+            id: crypto.randomUUID(),
+            timestamp: Date.now(),
+            type: 'mask_edit',
+            prompt: prompt,
+            thumbnailUrl: newImageUrl,
+            generatedImageUrls: updatedUrls,
+            selectedGeneratedImageIndex: selectedGeneratedImageIndex,
+        };
+        onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+        
         handleCloseMaskEditor();
         setShowModificationUI(false);
         setIsRefiningInFullScreen(false);
@@ -349,7 +426,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       } finally {
         setIsLoading(false);
       }
-  }, [isDevMode, originalImage, imageToEditUrl, generatedImageUrls, selectedGeneratedImageIndex, onGeneratedImageUrlsChange, handleCloseMaskEditor, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+  }, [isDevMode, originalImage, imageToEditUrl, generatedImageUrls, selectedGeneratedImageIndex, onGeneratedImageUrlsChange, handleCloseMaskEditor, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange]);
 
   const handleUndoClick = useCallback(() => {
     if (undoImageUrl && undoIndex !== null && generatedImageUrls) {
@@ -385,6 +462,20 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     }
   }, [redoImageUrl, redoIndex, generatedImageUrls, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
+  const handleRevertToHistory = useCallback((entry: HistoryEntry) => {
+    onGeneratedImageUrlsChange(entry.generatedImageUrls);
+    onSelectedGeneratedImageIndexChange(entry.selectedGeneratedImageIndex);
+    onUndoImageUrlChange(null);
+    onUndoIndexChange(null);
+    onRedoImageUrlChange(null);
+    onRedoIndexChange(null);
+    setActiveTab('result');
+    setShowModificationUI(false);
+  }, [onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+
+  const handleClearHistory = useCallback(() => {
+    onGenerationHistoryChange([]);
+  }, [onGenerationHistoryChange]);
 
   return (
     <>
@@ -503,28 +594,61 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             {error && <p className="text-red-400 text-center mt-2">{error}</p>}
           </div>
 
-          <ImageDisplay
-            title="3. Veja o Resultado"
-            subtitle={generatedImageUrls ? `Futuro: +${futureYearLabel} (${selectedScenario.label}) - Variação ${selectedGeneratedImageIndex + 1}/${generatedImageUrls.length}` : undefined}
-            originalImageUrl={originalImageUrl}
-            imageUrls={generatedImageUrls}
-            isLoading={isLoading}
-            className="md:col-span-3"
-            onModifyClick={selectedGeneratedImageUrl ? () => setShowModificationUI(prev => !prev) : undefined}
-            selectedImageIndex={selectedGeneratedImageIndex}
-            onSelectImageIndex={onSelectedGeneratedImageIndexChange}
-            isUndoAvailable={undoIndex === selectedGeneratedImageIndex}
-            onUndoClick={handleUndoClick}
-            isRedoAvailable={redoIndex === selectedGeneratedImageIndex}
-            onRedoClick={handleRedoClick}
-            // Fullscreen refinement props
-            isRefiningInFullScreen={isRefiningInFullScreen}
-            onIsRefiningInFullScreenChange={setIsRefiningInFullScreen}
-            modificationPrompt={modificationPrompt}
-            onModificationPromptChange={setModificationPrompt}
-            onModificationGenerateClick={handleModificationGenerateClick}
-            onOpenMaskEditor={handleOpenMaskEditor}
-          />
+          <div className="md:col-span-3 flex flex-col h-full">
+            <div className="flex border-b border-gray-700 mb-2">
+              <button
+                onClick={() => setActiveTab('result')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg -mb-px border-b-2 ${
+                  activeTab === 'result'
+                    ? 'text-brand-blue border-brand-blue'
+                    : 'text-gray-400 border-transparent hover:text-white'
+                }`}
+              >
+                <SparklesIcon />
+                Resultado
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg -mb-px border-b-2 ${
+                  activeTab === 'history'
+                    ? 'text-brand-blue border-brand-blue'
+                    : 'text-gray-400 border-transparent hover:text-white'
+                }`}
+              >
+                <ClockIcon />
+                Histórico
+              </button>
+            </div>
+            
+            {activeTab === 'result' ? (
+              <ImageDisplay
+                title="3. Veja o Resultado"
+                subtitle={generatedImageUrls ? `Futuro: +${futureYearLabel} (${selectedScenario.label}) - Variação ${selectedGeneratedImageIndex + 1}/${generatedImageUrls.length}` : undefined}
+                originalImageUrl={originalImageUrl}
+                imageUrls={generatedImageUrls}
+                isLoading={isLoading}
+                onModifyClick={selectedGeneratedImageUrl ? () => setShowModificationUI(prev => !prev) : undefined}
+                selectedImageIndex={selectedGeneratedImageIndex}
+                onSelectImageIndex={onSelectedGeneratedImageIndexChange}
+                isUndoAvailable={undoIndex === selectedGeneratedImageIndex}
+                onUndoClick={handleUndoClick}
+                isRedoAvailable={redoIndex === selectedGeneratedImageIndex}
+                onRedoClick={handleRedoClick}
+                isRefiningInFullScreen={isRefiningInFullScreen}
+                onIsRefiningInFullScreenChange={setIsRefiningInFullScreen}
+                modificationPrompt={modificationPrompt}
+                onModificationPromptChange={setModificationPrompt}
+                onModificationGenerateClick={handleModificationGenerateClick}
+                onOpenMaskEditor={handleOpenMaskEditor}
+              />
+            ) : (
+              <GenerationHistoryPanel 
+                history={generationHistory}
+                onRevert={handleRevertToHistory}
+                onClear={handleClearHistory}
+              />
+            )}
+          </div>
         </div>
       </main>
       {isMaskEditorOpen && imageToEditUrl && (

@@ -8,7 +8,6 @@ interface ImageDisplayProps {
   imageUrls: string[] | null;
   originalImageUrl: string | null;
   isLoading?: boolean;
-  className?: string;
   onModifyClick?: () => void;
   selectedImageIndex: number;
   onSelectImageIndex: (index: number) => void;
@@ -31,7 +30,6 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   imageUrls, 
   originalImageUrl, 
   isLoading, 
-  className, 
   onModifyClick, 
   selectedImageIndex, 
   onSelectImageIndex, 
@@ -109,7 +107,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   const canBeMaximized = selectedImageUrl && !isLoading;
 
   return (
-    <div className={`w-full flex flex-col h-full ${className || ''}`}>
+    <div className="w-full flex flex-col h-full">
       <h2 className="text-lg font-semibold mb-2 text-gray-300">{title}</h2>
       {subtitle && <p className="text-sm text-gray-400 -mt-2 mb-2">{subtitle}</p>}
       <div
