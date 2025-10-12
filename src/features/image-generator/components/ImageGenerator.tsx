@@ -638,14 +638,14 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 
           <div className="md:col-span-3 flex flex-col h-full">
             <div className="flex justify-between items-center border-b border-gray-700 mb-2">
-                <h2 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue border-b-2 border-brand-blue rounded-t-lg -mb-px">
+                <h2 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue">
                     3. Veja o Resultado
                 </h2>
                 <div className="flex">
                     <button
                         onClick={() => setActiveTab('result')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg ${
-                            activeTab === 'result' ? 'text-white' : 'text-gray-400 hover:text-white'
+                            activeTab === 'result' ? 'text-white border-b-2 border-brand-blue -mb-px' : 'text-gray-400 hover:text-white'
                         }`}
                         >
                         <SparklesIcon />
@@ -654,7 +654,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg ${
-                            activeTab === 'history' ? 'text-white' : 'text-gray-400 hover:text-white'
+                            activeTab === 'history' ? 'text-white border-b-2 border-brand-blue -mb-px' : 'text-gray-400 hover:text-white'
                         }`}
                         >
                         <ClockIcon />
@@ -686,6 +686,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             ) : (
               <GenerationHistoryPanel 
                 history={generationHistory}
+                snapshots={historySnapshots}
                 onRevert={handleRevertToHistory}
                 onClear={handleClearHistory}
               />

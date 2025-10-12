@@ -104,6 +104,21 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
   const canBeMaximized = selectedImageUrl && !isLoading;
 
+  const getNavUrls = () => {
+    if (!imageUrls || imageUrls.length <= 1) {
+      return { prev: null, next: null };
+    }
+    const prevIndex = (selectedImageIndex - 1 + imageUrls.length) % imageUrls.length;
+    const nextIndex = (selectedImageIndex + 1) % imageUrls.length;
+    return {
+      prev: imageUrls[prevIndex],
+      next: imageUrls[nextIndex],
+    };
+  };
+
+  const { prev: prevImageUrl, next: nextImageUrl } = getNavUrls();
+
+
   return (
     <div className="w-full flex flex-col h-full">
       {subtitle && <p className="text-sm text-gray-400 mb-2">{subtitle}</p>}
@@ -132,7 +147,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                   <button
                     key={index}
                     onClick={(e) => { e.stopPropagation(); onSelectImageIndex(index); }}
-                    className={`w-14 h-14 rounded-md overflow-hidden border-2 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue ${selectedImageIndex === index ? 'border-brand-blue' : 'border-gray-500/50 hover:border-white'}`}
+                    className={`w-20 h-20 rounded-md overflow-hidden border-2 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-brand-blue ${selectedImageIndex === index ? 'border-brand-blue' : 'border-gray-500/50 hover:border-white'}`}
                     aria-label={`Select variation ${index + 1}`}
                     title={`Variation ${index + 1}`}
                   >
@@ -265,20 +280,39 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
             {/* Navigation Controls */}
             {imageUrls && imageUrls.length > 1 && (
               <>
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeftIcon />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
-                  aria-label="Next image"
-                >
-                  <ChevronRightIcon />
-                </button>
+                <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 flex items-center gap-6 opacity-70 hover:opacity-100 transition-opacity duration-300">
+                  <button
+                    onClick={handlePrevImage}
+                    className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeftIcon />
+                  </button>
+                  {prevImageUrl && (
+                    <img 
+                      src={prevImageUrl} 
+                      alt="Previous" 
+                      className="w-40 h-40 object-cover rounded-md border-2 border-white/20 shadow-lg pointer-events-none"
+                    />
+                  )}
+                </div>
+
+                <div className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 flex items-center gap-6 opacity-70 hover:opacity-100 transition-opacity duration-300">
+                  {nextImageUrl && (
+                    <img 
+                      src={nextImageUrl} 
+                      alt="Next" 
+                      className="w-40 h-40 object-cover rounded-md border-2 border-white/20 shadow-lg pointer-events-none"
+                    />
+                  )}
+                  <button
+                    onClick={handleNextImage}
+                    className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white p-2 rounded-full transition-colors z-20"
+                    aria-label="Next image"
+                  >
+                    <ChevronRightIcon />
+                  </button>
+                </div>
               </>
             )}
 
