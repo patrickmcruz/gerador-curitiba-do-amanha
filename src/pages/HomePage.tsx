@@ -88,35 +88,55 @@ export const HomePage: React.FC = () => {
     }
   });
 
-
-  const [scenarios, setScenarios] = useState<Scenario[]>(() => {
-    const savedScenarios = localStorage.getItem('futureScenarios');
-    if (savedScenarios) {
-        try {
-            return JSON.parse(savedScenarios);
-        } catch (e) {
-            console.error("Failed to parse scenarios from localStorage", e);
-        }
+  const [prefillDescriptions, setPrefillDescriptions] = useState<boolean>(() => {
+    try {
+        const saved = localStorage.getItem('prefillDescriptions');
+        // Default to false for new users
+        return saved ? JSON.parse(saved) : false;
+    } catch (e) {
+        console.error("Failed to parse prefillDescriptions from localStorage", e);
+        return false;
     }
-    return t('scenarios', { returnObjects: true }) as Scenario[];
   });
-  
-  const [selectedScenarioValue, setSelectedScenarioValue] = useState<string>(scenarios[0]?.value || '');
+
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [selectedScenarioValue, setSelectedScenarioValue] = useState<string>('');
   
   useEffect(() => {
-    // This effect updates the default scenarios when the language changes,
-    // but only if the user hasn't saved their own custom scenarios.
+    // This effect initializes scenarios from localStorage or defaults.
+    // It runs when the language or the prefill setting changes, but only
+    // updates the default scenarios if the user hasn't saved their own.
     const savedScenarios = localStorage.getItem('futureScenarios');
-    if (!savedScenarios) {
-      const newScenarios = t('scenarios', { returnObjects: true }) as Scenario[];
-      setScenarios(newScenarios);
+    if (savedScenarios) {
+      try {
+        setScenarios(JSON.parse(savedScenarios));
+        return; // Exit if user has custom scenarios
+      } catch (e) {
+        console.error("Failed to parse scenarios from localStorage", e);
+        // If parsing fails, proceed to load defaults
+      }
     }
-  }, [i18n.language, t]);
+    
+    // No saved scenarios, so load defaults based on current language and settings.
+    const defaultScenarios = t('scenarios', { returnObjects: true }) as Scenario[];
+    if (prefillDescriptions) {
+      const scenarioDefaults = t('scenarioDefaults', { returnObjects: true }) as Record<string, { description: string }>;
+      const populatedScenarios = defaultScenarios.map(sc => {
+        if (scenarioDefaults[sc.value] && scenarioDefaults[sc.value].description) {
+          return { ...sc, description: scenarioDefaults[sc.value].description };
+        }
+        return sc;
+      });
+      setScenarios(populatedScenarios);
+    } else {
+      setScenarios(defaultScenarios);
+    }
+  }, [i18n.language, t, prefillDescriptions]);
 
   useEffect(() => {
     // Ensure selectedScenarioValue is valid if scenarios change
-    if (!scenarios.find(s => s.value === selectedScenarioValue)) {
-      setSelectedScenarioValue(scenarios[0]?.value || '');
+    if (scenarios.length > 0 && !scenarios.find(s => s.value === selectedScenarioValue)) {
+      setSelectedScenarioValue(scenarios[0].value);
     }
   }, [scenarios, selectedScenarioValue]);
 
@@ -198,12 +218,32 @@ export const HomePage: React.FC = () => {
     setPage('main');
   };
 
-  const handleSaveSettings = (settings: { numberOfGenerations: number; isDevMode: boolean }) => {
+  const handleSaveSettings = (settings: { numberOfGenerations: number; isDevMode: boolean; prefillDescriptions: boolean; }) => {
     setNumberOfGenerations(settings.numberOfGenerations);
     localStorage.setItem('numberOfGenerations', String(settings.numberOfGenerations));
     setIsDevMode(settings.isDevMode);
     localStorage.setItem('isDevMode', JSON.stringify(settings.isDevMode));
+    setPrefillDescriptions(settings.prefillDescriptions);
+    localStorage.setItem('prefillDescriptions', JSON.stringify(settings.prefillDescriptions));
     setPage('main');
+  };
+  
+  const handlePrefillDescriptionChange = (value: boolean) => {
+    const savedScenariosJSON = localStorage.getItem('futureScenarios');
+    if (savedScenariosJSON) {
+        try {
+            const savedScenarios = JSON.parse(savedScenariosJSON);
+            const defaultScenarios = t('scenarios', { returnObjects: true }) as Scenario[];
+            // Heuristic: If the number of saved scenarios is the same as the default,
+            // we assume the user hasn't added/removed any and it's safe to reset them.
+            if (savedScenarios.length === defaultScenarios.length) {
+                localStorage.removeItem('futureScenarios');
+            }
+        } catch (e) {
+            console.error("Could not process scenarios while changing prefill setting:", e);
+        }
+    }
+    setPrefillDescriptions(value);
   };
 
   const handleImageUpload = useCallback((file: File) => {
@@ -260,6 +300,7 @@ export const HomePage: React.FC = () => {
             <ScenarioForm
               onSave={handleSaveScenarios}
               onCancel={() => setPage('main')}
+              prefillDescriptions={prefillDescriptions}
             />
         );
       case 'settings':
@@ -267,8 +308,10 @@ export const HomePage: React.FC = () => {
             <SettingsPage
                 initialNumberOfGenerations={numberOfGenerations}
                 initialIsDevMode={isDevMode}
+                initialPrefillDescriptions={prefillDescriptions}
                 onSave={handleSaveSettings}
                 onCancel={() => setPage('main')}
+                onPrefillDescriptionsChange={handlePrefillDescriptionChange}
             />
         );
       case 'main':

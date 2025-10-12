@@ -7,7 +7,7 @@ import { ImageMaskEditor } from './ImageMaskEditor';
 import { GenerationHistoryPanel } from './GenerationHistoryPanel';
 import { imageGenerationService } from '../../../services/image-generation';
 import { Scenario, HistoryEntry } from '../constants';
-import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon, RefreshIcon } from '../../../components/ui/Icons';
+import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon, RefreshIcon, CloseIcon } from '../../../components/ui/Icons';
 
 interface ImageGeneratorProps {
     scenarios: Scenario[];
@@ -614,9 +614,21 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                 </div>
               </div>
                <div className="mt-8">
-                <label htmlFor="custom-prompt" className="block text-sm font-medium text-gray-300 mb-1">
-                  {t('imageGenerator.customPromptLabel')}
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="custom-prompt" className="block text-sm font-medium text-gray-300">
+                    {t('imageGenerator.customPromptLabel')}
+                  </label>
+                  {customPrompt && (
+                    <button
+                      onClick={() => onCustomPromptChange('')}
+                      className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-700"
+                      title={t('imageGenerator.clearPrompt')}
+                      aria-label={t('imageGenerator.clearPrompt')}
+                    >
+                      <CloseIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
                 <textarea
                   id="custom-prompt"
                   value={customPrompt}

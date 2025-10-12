@@ -29,6 +29,13 @@
       "pt-BR": "Português (BR)",
       "en": "English (USA)"
     },
+    "scenarioDefaults": {
+      "title": "Padrões de Cenário",
+      "label": "Preencher descrições de cenário padrão",
+      "description": "Quando ativado, os cenários 'Otimista' e 'Pessimista' iniciarão com uma descrição preenchida baseada em temas comuns. Desative se preferir começar com uma tela em branco.",
+      "on": "Ativado",
+      "off": "Desativado"
+    },
     "buttons": {
       "save": "Salvar Configurações",
       "cancel": "Cancelar",
@@ -73,7 +80,8 @@
     "refineError": "Por favor, descreva as mudanças que você quer fazer.",
     "refineSelectionError": "Uma imagem precisa ser gerada e selecionada para criar uma variação.",
     "tabResult": "Resultado",
-    "tabHistory": "Histórico"
+    "tabHistory": "Histórico",
+    "clearPrompt": "Limpar prompt"
   },
   "imageUploader": {
     "title": "1. Suba uma imagem",
@@ -142,9 +150,17 @@
     "clear": "Limpar máscara"
   },
   "scenarios": [
-    { "label": "Otimista", "value": "Otimista", "description": "Energia limpa, arquitetura sustentável, áreas verdes exuberantes e transporte público avançado." },
-    { "label": "Pessimista", "value": "Pessimista", "description": "Poluição, decadência urbana, superpopulação e falta de espaços verdes." }
+    { "label": "Otimista", "value": "Otimista", "description": "" },
+    { "label": "Pessimista", "value": "Pessimista", "description": "" }
   ],
+  "scenarioDefaults": {
+    "Otimista": {
+      "description": "arquitetura sustentável, veículos elétricos voadores, muitas áreas verdes, energia solar integrada, prédios com jardins verticais, transporte público futurista, pessoas andando de bicicleta, rios limpos e visíveis, iluminação holográfica, design biofílico"
+    },
+    "Pessimista": {
+      "description": "atmosfera poluída e densa, prédios em ruínas ou abandonados, pouca vegetação, tráfego intenso de veículos antigos, outdoors de neon excessivos, superpopulação visível, estruturas de vigilância, chuva ácida, tecnologia obsoleta e quebrada, desigualdade social evidente"
+    }
+  },
   "promptSuggestions": {
     "Otimista": [ "arquitetura sustentável", "veículos elétricos voadores", "muitas áreas verdes", "energia solar integrada", "prédios com jardins verticais", "transporte público futurista", "pessoas andando de bicicleta", "rios limpos e visíveis", "iluminação holográfica", "design biofílico" ],
     "Pessimista": [ "atmosfera poluída e densa", "prédios em ruínas ou abandonados", "pouca vegetação", "tráfego intenso de veículos antigos", "outdoors de neon excessivos", "superpopulação visível", "estruturas de vigilância", "chuva ácida", "tecnologia obsoleta e quebrada", "desigualdade social evidente" ]

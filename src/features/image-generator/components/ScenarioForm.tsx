@@ -5,19 +5,35 @@ import { Scenario } from '../constants';
 interface ScenarioFormProps {
   onSave: (scenarios: Scenario[]) => void;
   onCancel: () => void;
+  prefillDescriptions: boolean;
 }
 
-export const ScenarioForm: React.FC<ScenarioFormProps> = ({ onSave, onCancel }) => {
+export const ScenarioForm: React.FC<ScenarioFormProps> = ({ onSave, onCancel, prefillDescriptions }) => {
   const { t } = useTranslation();
 
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
     try {
       const savedScenarios = localStorage.getItem('futureScenarios');
-      return savedScenarios ? JSON.parse(savedScenarios) : (t('scenarios', { returnObjects: true }) as Scenario[]);
+      if (savedScenarios) {
+        return JSON.parse(savedScenarios);
+      }
     } catch (e) {
       console.error("Failed to parse scenarios from localStorage", e);
-      return t('scenarios', { returnObjects: true }) as Scenario[];
     }
+    
+    // No saved scenarios, so load defaults based on the setting.
+    const defaultScenarios = t('scenarios', { returnObjects: true }) as Scenario[];
+    if (prefillDescriptions) {
+      const scenarioDefaults = t('scenarioDefaults', { returnObjects: true }) as Record<string, { description: string }>;
+      return defaultScenarios.map(sc => {
+        if (scenarioDefaults[sc.value] && scenarioDefaults[sc.value].description) {
+          return { ...sc, description: scenarioDefaults[sc.value].description };
+        }
+        return sc;
+      });
+    }
+    // If prefill is off, return defaults with empty descriptions.
+    return defaultScenarios;
   });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevScenariosLength = useRef(scenarios.length);

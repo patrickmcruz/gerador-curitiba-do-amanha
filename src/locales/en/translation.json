@@ -29,6 +29,13 @@
       "pt-BR": "Portuguese (BR)",
       "en": "English (USA)"
     },
+    "scenarioDefaults": {
+      "title": "Scenario Defaults",
+      "label": "Pre-fill default scenario descriptions",
+      "description": "When enabled, the 'Optimistic' and 'Pessimistic' scenarios will start with a pre-filled description based on common themes. Disable this if you prefer to start with a blank slate.",
+      "on": "Enabled",
+      "off": "Disabled"
+    },
     "buttons": {
       "save": "Save Settings",
       "cancel": "Cancel",
@@ -73,7 +80,8 @@
     "refineError": "Please describe the changes you want to make.",
     "refineSelectionError": "An image must be generated and selected first to create a variation.",
     "tabResult": "Result",
-    "tabHistory": "History"
+    "tabHistory": "History",
+    "clearPrompt": "Clear prompt"
   },
   "imageUploader": {
     "title": "Original Image",
@@ -142,9 +150,17 @@
     "clear": "Clear mask"
   },
   "scenarios": [
-    { "label": "Optimistic", "value": "Otimista", "description": "Clean energy, sustainable architecture, lush green spaces, and advanced public transportation." },
-    { "label": "Pessimistic", "value": "Pessimista", "description": "Pollution, urban decay, overpopulation, and a lack of green spaces." }
+    { "label": "Optimistic", "value": "Optimistic", "description": "" },
+    { "label": "Pessimistic", "value": "Pessimistic", "description": "" }
   ],
+  "scenarioDefaults": {
+    "Optimistic": {
+      "description": "sustainable architecture, flying electric vehicles, lots of green areas, integrated solar energy, buildings with vertical gardens, futuristic public transport, people riding bikes, clean and visible rivers, holographic lighting, biophilic design"
+    },
+    "Pessimistic": {
+      "description": "polluted and dense atmosphere, buildings in ruins or abandoned, little vegetation, heavy traffic of old vehicles, excessive neon signs, visible overpopulation, surveillance structures, acid rain, obsolete and broken technology, evident social inequality"
+    }
+  },
   "promptSuggestions": {
     "Optimistic": [ "sustainable architecture", "flying electric vehicles", "lots of green areas", "integrated solar energy", "buildings with vertical gardens", "futuristic public transport", "people riding bikes", "clean and visible rivers", "holographic lighting", "biophilic design" ],
     "Pessimistic": [ "polluted and dense atmosphere", "buildings in ruins or abandoned", "little vegetation", "heavy traffic of old vehicles", "excessive neon signs", "visible overpopulation", "surveillance structures", "acid rain", "obsolete and broken technology", "evident social inequality" ]
