@@ -570,7 +570,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                 selectedScenario={selectedScenario}
                 onScenarioChange={handleScenarioChange}
               />
-              <div className="mt-4">
+              <div className="mt-8">
                 <div className="flex justify-between items-center mb-1">
                     <label htmlFor="prompt-suggestions" className="block text-sm font-medium text-gray-300">
                         Sugestões de Prompt
@@ -595,7 +595,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                     ))}
                 </div>
               </div>
-               <div className="mt-4">
+               <div className="mt-8">
                 <label htmlFor="custom-prompt" className="block text-sm font-medium text-gray-300 mb-1">
                   Prompt Customizado (opcional)
                 </label>

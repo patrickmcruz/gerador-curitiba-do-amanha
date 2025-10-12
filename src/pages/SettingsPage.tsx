@@ -15,6 +15,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
     onSave({ numberOfGenerations, isDevMode });
   };
 
+  const handleReset = () => {
+    // Esses são os valores padrão da aplicação definidos em HomePage.tsx
+    setNumberOfGenerations(3);
+    setIsDevMode(true);
+  };
+
   const generationOptions = [1, 2, 3, 4];
 
   return (
@@ -89,7 +95,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialNumberOfGener
         </div>
       </div>
 
-      <div className="flex justify-end gap-4 mt-8 border-t border-gray-700 pt-6">
+      <div className="flex justify-end items-center gap-4 mt-8 border-t border-gray-700 pt-6">
+        <button
+            onClick={handleReset}
+            className="mr-auto bg-red-800 hover:bg-red-700 text-gray-200 font-bold py-2 px-6 rounded-lg transition-all text-sm"
+            title="Reseta as configurações para os valores padrão"
+        >
+          Resetar Padrões
+        </button>
         <button
           onClick={onCancel}
           className="bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2 px-6 rounded-lg transition-all"
