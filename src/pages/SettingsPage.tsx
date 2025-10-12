@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { GearIcon } from '../components/ui/Icons';
 
 interface SettingsPageProps {
   initialNumberOfGenerations: number;
@@ -43,7 +44,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   return (
     <main className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-2xl shadow-2xl backdrop-blur-sm border border-gray-700 animate-fade-in">
-      <h2 className="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-4">
+      <h2 className="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-4 flex items-center gap-3">
+        <GearIcon className="w-8 h-8" />
         {t('settings.title')}
       </h2>
       

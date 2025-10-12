@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Scenario } from '../constants';
+import { PencilIcon } from '../../../components/ui/Icons';
 
 interface ScenarioFormProps {
   onSave: (scenarios: Scenario[]) => void;
@@ -82,7 +83,8 @@ export const ScenarioForm: React.FC<ScenarioFormProps> = ({ onSave, onCancel, pr
 
   return (
     <main className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-2xl shadow-2xl backdrop-blur-sm border border-gray-700">
-      <h2 className="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-4">
+      <h2 className="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-4 flex items-center gap-3">
+        <PencilIcon className="w-8 h-8" />
         {t('scenarioForm.title')}
       </h2>
       <div ref={scrollContainerRef} className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">

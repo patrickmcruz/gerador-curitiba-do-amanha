@@ -258,12 +258,18 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         customPrompt: customPrompt,
       });
 
+    const mockPrompt = [
+        `Scenario: ${selectedScenario.label}`,
+        selectedScenario.description,
+        customPrompt
+    ].filter(Boolean).join(' | ');
+
     if (isDevMode) {
       setTimeout(async () => {
         if (originalImage) {
           try {
             const mockPromises = Array.from({ length: numberOfGenerations }, (_, i) => 
-                createMockImageWithText(originalImage, `[DEV MOCK ${i + 1}] ${fullPrompt}`)
+                createMockImageWithText(originalImage, `[DEV MOCK ${i + 1}] ${mockPrompt}`)
             );
 
             const mockUrls = await Promise.all(mockPromises);
@@ -341,11 +347,13 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         modificationPrompt: modificationPrompt,
     });
 
+    const mockPrompt = `Refine: ${modificationPrompt}`;
+
     if (isDevMode) {
         setTimeout(async () => {
           if (originalImage && generatedImageUrls) {
             try {
-              const newMockUrl = await createMockImageWithText(originalImage, `[DEV MOCK VARIAÇÃO] ${fullPrompt}`);
+              const newMockUrl = await createMockImageWithText(originalImage, `[DEV MOCK VARIAÇÃO] ${mockPrompt}`);
               const imageToUndo = selectedGeneratedImageUrl;
               const updatedUrls = [...generatedImageUrls];
               updatedUrls[selectedGeneratedImageIndex] = newMockUrl;
@@ -434,12 +442,13 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       setActiveTab('result');
 
       const fullPrompt = t('prompts.refineWithMask', { prompt });
+      const mockPrompt = `Magic Edit: ${prompt}`;
 
       if (isDevMode) {
         setTimeout(async () => {
           if (originalImage && generatedImageUrls) {
             try {
-              const newMockUrl = await createMockImageWithText(originalImage, `[DEV MOCK MÁGICA] ${fullPrompt}`);
+              const newMockUrl = await createMockImageWithText(originalImage, `[DEV MOCK MÁGICA] ${mockPrompt}`);
               const imageToUndo = imageToEditUrl;
               const updatedUrls = [...generatedImageUrls];
               updatedUrls[selectedGeneratedImageIndex] = newMockUrl;
