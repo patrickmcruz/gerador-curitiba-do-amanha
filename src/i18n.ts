@@ -85,10 +85,12 @@ const translationEN = {
     "refineSelectionError": "An image must be generated and selected first to create a variation.",
     "tabResult": "Result",
     "tabHistory": "History",
-    "clearPrompt": "Clear prompt"
+    "clearPrompt": "Clear prompt",
+    "undoPrompt": "Undo prompt change",
+    "redoPrompt": "Redo prompt change"
   },
   "imageUploader": {
-    "title": "Original Image",
+    "title": "1. Upload image",
     "dragAndDrop": "<0>Click to upload</0> or drag and drop",
     "fileTypes": "PNG, JPG, WEBP",
     "uploadedImageAlt": "Uploaded image",
@@ -270,7 +272,9 @@ const translationPTBR = {
     "refineSelectionError": "Uma imagem precisa ser gerada e selecionada para criar uma variação.",
     "tabResult": "Resultado",
     "tabHistory": "Histórico",
-    "clearPrompt": "Limpar prompt"
+    "clearPrompt": "Limpar prompt",
+    "undoPrompt": "Desfazer alteração no prompt",
+    "redoPrompt": "Refazer alteração no prompt"
   },
   "imageUploader": {
     "title": "1. Suba uma imagem",

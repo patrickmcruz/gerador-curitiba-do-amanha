@@ -81,7 +81,9 @@
     "refineSelectionError": "Uma imagem precisa ser gerada e selecionada para criar uma variação.",
     "tabResult": "Resultado",
     "tabHistory": "Histórico",
-    "clearPrompt": "Limpar prompt"
+    "clearPrompt": "Limpar prompt",
+    "undoPrompt": "Desfazer alteração no prompt",
+    "redoPrompt": "Refazer alteração no prompt"
   },
   "imageUploader": {
     "title": "1. Suba uma imagem",

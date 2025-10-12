@@ -116,10 +116,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, ima
             </div>
           </>
         ) : (
-          <div className="text-gray-400">
+          <div className="flex flex-col items-center gap-4 text-gray-400">
             <UploadIcon />
-            <p className="font-semibold"><Trans i18nKey="imageUploader.dragAndDrop" defaults='<0>Clique para enviar</0> ou arraste'><span className="text-brand-blue">Clique para enviar</span> ou arraste</Trans></p>
-            <p className="text-sm text-gray-500">{t('imageUploader.fileTypes', 'PNG, JPG, WEBP')}</p>
+            <div>
+              <p className="font-semibold"><Trans i18nKey="imageUploader.dragAndDrop" defaults='<0>Clique para enviar</0> ou arraste'><span className="text-brand-blue">Clique para enviar</span> ou arraste</Trans></p>
+              <p className="text-sm text-gray-500">{t('imageUploader.fileTypes', 'PNG, JPG, WEBP')}</p>
+            </div>
           </div>
         )}
       </div>

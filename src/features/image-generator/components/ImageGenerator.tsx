@@ -7,14 +7,14 @@ import { ImageMaskEditor } from './ImageMaskEditor';
 import { GenerationHistoryPanel } from './GenerationHistoryPanel';
 import { imageGenerationService } from '../../../services/image-generation';
 import { Scenario, HistoryEntry } from '../constants';
-import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon, RefreshIcon, CloseIcon } from '../../../components/ui/Icons';
+import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon, RefreshIcon, CloseIcon, UndoIcon, RedoIcon } from '../../../components/ui/Icons';
 
 interface ImageGeneratorProps {
     scenarios: Scenario[];
     onManageScenarios: () => void;
     onSettingsClick: () => void;
     customPrompt: string;
-    onCustomPromptChange: React.Dispatch<React.SetStateAction<string>>;
+    onCustomPromptChange: (value: string) => void;
     numberOfGenerations: number;
     isDevMode: boolean;
     originalImage: File | null;
@@ -38,6 +38,10 @@ interface ImageGeneratorProps {
     onGenerationHistoryChange: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
     historySnapshots: Record<string, string[]>;
     onHistorySnapshotsChange: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
+    onUndoPrompt: () => void;
+    onRedoPrompt: () => void;
+    canUndoPrompt: boolean;
+    canRedoPrompt: boolean;
 }
 
 const createMockImageWithText = (imageFile: File, text: string): Promise<string> => {
@@ -165,6 +169,10 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onGenerationHistoryChange,
     historySnapshots,
     onHistorySnapshotsChange,
+    onUndoPrompt,
+    onRedoPrompt,
+    canUndoPrompt,
+    canRedoPrompt,
 }) => {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -213,7 +221,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    onCustomPromptChange(prev => prev ? `${prev}, ${suggestion}` : suggestion);
+    // FIX: Pass the new string value to onCustomPromptChange instead of a function.
+    onCustomPromptChange(customPrompt ? `${customPrompt}, ${suggestion}` : suggestion);
   };
   
   const isPromptProvided = selectedScenario?.description?.trim() !== '' || customPrompt.trim() !== '';
@@ -618,16 +627,36 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                   <label htmlFor="custom-prompt" className="block text-sm font-medium text-gray-300">
                     {t('imageGenerator.customPromptLabel')}
                   </label>
-                  {customPrompt && (
+                  <div className="flex items-center gap-1">
                     <button
-                      onClick={() => onCustomPromptChange('')}
-                      className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-700"
-                      title={t('imageGenerator.clearPrompt')}
-                      aria-label={t('imageGenerator.clearPrompt')}
+                        onClick={onUndoPrompt}
+                        disabled={!canUndoPrompt}
+                        className="text-gray-400 hover:text-white disabled:text-gray-600 disabled:cursor-not-allowed transition-colors p-1 rounded-full hover:bg-gray-700"
+                        title={t('imageGenerator.undoPrompt')}
+                        aria-label={t('imageGenerator.undoPrompt')}
                     >
-                      <CloseIcon className="w-4 h-4" />
+                        <UndoIcon className="w-4 h-4" />
                     </button>
-                  )}
+                    <button
+                        onClick={onRedoPrompt}
+                        disabled={!canRedoPrompt}
+                        className="text-gray-400 hover:text-white disabled:text-gray-600 disabled:cursor-not-allowed transition-colors p-1 rounded-full hover:bg-gray-700"
+                        title={t('imageGenerator.redoPrompt')}
+                        aria-label={t('imageGenerator.redoPrompt')}
+                    >
+                        <RedoIcon className="w-4 h-4" />
+                    </button>
+                    {customPrompt && (
+                      <button
+                        onClick={() => onCustomPromptChange('')}
+                        className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-700"
+                        title={t('imageGenerator.clearPrompt')}
+                        aria-label={t('imageGenerator.clearPrompt')}
+                      >
+                        <CloseIcon className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <textarea
                   id="custom-prompt"

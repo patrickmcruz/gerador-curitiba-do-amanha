@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageGenerator } from '../features/image-generator/components/ImageGenerator';
 import { Scenario, HistoryEntry } from '../features/image-generator/constants';
@@ -47,7 +47,48 @@ const compressImage = (dataUrl: string, targetWidth: number = 1024, quality: num
 export const HomePage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState<'main' | 'form' | 'settings'>('main');
-  const [customPrompt, setCustomPrompt] = useState<string>('');
+
+  // State for custom prompt with undo/redo
+  const [customPrompt, setCustomPromptState] = useState<string>('');
+  const [promptHistory, setPromptHistory] = useState<string[]>([customPrompt]);
+  const [promptHistoryIndex, setPromptHistoryIndex] = useState<number>(0);
+  const promptDebounceTimeout = useRef<number | null>(null);
+
+  const onCustomPromptChange = (newPrompt: string) => {
+      setCustomPromptState(newPrompt);
+
+      if (promptDebounceTimeout.current) {
+          clearTimeout(promptDebounceTimeout.current);
+      }
+
+      promptDebounceTimeout.current = window.setTimeout(() => {
+          if (promptHistory[promptHistoryIndex] !== newPrompt) {
+              const newHistory = promptHistory.slice(0, promptHistoryIndex + 1);
+              newHistory.push(newPrompt);
+              setPromptHistory(newHistory);
+              setPromptHistoryIndex(newHistory.length - 1);
+          }
+      }, 1000); // 1-second debounce to add to undo history
+  };
+
+  const canUndoPrompt = promptHistoryIndex > 0;
+  const canRedoPrompt = promptHistoryIndex < promptHistory.length - 1;
+
+  const handleUndoPrompt = () => {
+      if (canUndoPrompt) {
+          const newIndex = promptHistoryIndex - 1;
+          setPromptHistoryIndex(newIndex);
+          setCustomPromptState(promptHistory[newIndex]);
+      }
+  };
+
+  const handleRedoPrompt = () => {
+      if (canRedoPrompt) {
+          const newIndex = promptHistoryIndex + 1;
+          setPromptHistoryIndex(newIndex);
+          setCustomPromptState(promptHistory[newIndex]);
+      }
+  };
 
   // State lifted from ImageGenerator
   const [originalImage, setOriginalImage] = useState<File | null>(null);
@@ -261,7 +302,9 @@ export const HomePage: React.FC = () => {
       reader.readAsDataURL(imageFile);
       setGeneratedImageUrls(null);
       setSelectedGeneratedImageIndex(0);
-      setCustomPrompt('');
+      setCustomPromptState('');
+      setPromptHistory(['']);
+      setPromptHistoryIndex(0);
       setSelectedScenarioValue(scenarios[0]?.value || '');
       setGenerationHistory([]);
       setHistorySnapshots({});
@@ -275,7 +318,10 @@ export const HomePage: React.FC = () => {
             setGeneratedImageUrls(savedState.generatedImageUrls);
             setSelectedGeneratedImageIndex(savedState.selectedGeneratedImageIndex);
             setSelectedScenarioValue(savedState.selectedScenarioValue);
-            setCustomPrompt(savedState.customPrompt || '');
+            const loadedPrompt = savedState.customPrompt || '';
+            setCustomPromptState(loadedPrompt);
+            setPromptHistory([loadedPrompt]);
+            setPromptHistoryIndex(0);
             setGenerationHistory(savedState.generationHistory || []);
             setHistorySnapshots(savedState.historySnapshots || {});
         } catch (e) {
@@ -322,7 +368,7 @@ export const HomePage: React.FC = () => {
               onManageScenarios={() => setPage('form')}
               onSettingsClick={() => setPage('settings')}
               customPrompt={customPrompt}
-              onCustomPromptChange={setCustomPrompt}
+              onCustomPromptChange={onCustomPromptChange}
               numberOfGenerations={numberOfGenerations}
               isDevMode={isDevMode}
               // Pass down lifted state and handlers
@@ -335,7 +381,7 @@ export const HomePage: React.FC = () => {
               onGeneratedImageUrlsChange={setGeneratedImageUrls}
               onSelectedGeneratedImageIndexChange={setSelectedGeneratedImageIndex}
               onSelectedScenarioValueChange={setSelectedScenarioValue}
-              // Pass down undo/redo state and handlers
+              // Pass down image undo/redo state and handlers
               undoImageUrl={undoImageUrl}
               undoIndex={undoIndex}
               redoImageUrl={redoImageUrl}
@@ -349,6 +395,11 @@ export const HomePage: React.FC = () => {
               onGenerationHistoryChange={setGenerationHistory}
               historySnapshots={historySnapshots}
               onHistorySnapshotsChange={setHistorySnapshots}
+              // Prompt undo/redo
+              onUndoPrompt={handleUndoPrompt}
+              onRedoPrompt={handleRedoPrompt}
+              canUndoPrompt={canUndoPrompt}
+              canRedoPrompt={canRedoPrompt}
             />
         );
     }
