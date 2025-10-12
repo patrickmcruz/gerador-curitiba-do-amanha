@@ -33,6 +33,60 @@ interface ImageGeneratorProps {
     onRedoIndexChange: (index: number | null) => void;
 }
 
+const createMockImageWithText = (imageFile: File, text: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return reject(new Error('Could not get canvas context'));
+          }
+  
+          // Draw the original image
+          ctx.drawImage(img, 0, 0);
+  
+          // Prepare text styling
+          const fontSize = Math.max(48, Math.round(canvas.width / 15));
+          ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Add a semi-transparent background for the text for better readability
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          const textMetrics = ctx.measureText(text);
+          const textWidth = textMetrics.width;
+          const textHeight = fontSize; // Approximate height
+          const padding = 20;
+          ctx.fillRect(
+            canvas.width / 2 - textWidth / 2 - padding,
+            canvas.height / 2 - textHeight / 2 - padding,
+            textWidth + padding * 2,
+            textHeight + padding * 2
+          );
+  
+          // Draw the main text
+          ctx.fillStyle = 'white';
+          ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+          
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => reject(new Error('Image failed to load'));
+        if (event.target?.result) {
+            img.src = event.target.result as string;
+        } else {
+            reject(new Error('File could not be read.'));
+        }
+      };
+      reader.onerror = () => reject(new Error('File reader failed'));
+      reader.readAsDataURL(imageFile);
+    });
+};
+
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
     scenarios, 
     onManageScenarios, 
@@ -64,6 +118,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   const [modificationPrompt, setModificationPrompt] = useState<string>('');
   const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
   const [imageToEditUrl, setImageToEditUrl] = useState<string | null>(null);
+  const [isDevMode, setIsDevMode] = useState<boolean>(false);
   
   // Undo/Redo state is now lifted up
 
@@ -108,6 +163,25 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onRedoImageUrlChange(null);
     onRedoIndexChange(null);
 
+    if (isDevMode) {
+      setTimeout(async () => {
+        if (originalImage) {
+          try {
+            const mockUrls = await Promise.all([
+              createMockImageWithText(originalImage, 'GERADA 01'),
+              createMockImageWithText(originalImage, 'GERADA 02'),
+              createMockImageWithText(originalImage, 'GERADA 03'),
+            ]);
+            onGeneratedImageUrlsChange(mockUrls);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
+          }
+        }
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
     try {
       const generatedImageBase64Array = await imageGenerationService.generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt);
       onGeneratedImageUrlsChange(generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`));
@@ -117,7 +191,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -131,6 +205,30 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 
     setIsLoading(true);
     setError(null);
+
+    if (isDevMode) {
+        setTimeout(async () => {
+          if (originalImage && generatedImageUrls) {
+            try {
+              const newMockUrl = await createMockImageWithText(originalImage, 'VARIAÇÃO (TEXTO)');
+              const imageToUndo = selectedGeneratedImageUrl;
+              const updatedUrls = [...generatedImageUrls];
+              updatedUrls[selectedGeneratedImageIndex] = newMockUrl;
+              
+              onUndoImageUrlChange(imageToUndo);
+              onUndoIndexChange(selectedGeneratedImageIndex);
+              onRedoImageUrlChange(null); // Clear redo history on new action
+              onRedoIndexChange(null);
+              onGeneratedImageUrlsChange(updatedUrls);
+              setIsRefiningInFullScreen(false);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
+            }
+          }
+          setIsLoading(false);
+        }, 500);
+        return;
+      }
 
     const imageToUndo = selectedGeneratedImageUrl;
 
@@ -153,19 +251,19 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+  }, [isDevMode, originalImage, generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleOpenMaskEditor = (imageUrl: string) => {
       setImageToEditUrl(imageUrl);
       setIsMaskEditorOpen(true);
   };
 
-  const handleCloseMaskEditor = () => {
+  const handleCloseMaskEditor = useCallback(() => {
       setIsMaskEditorOpen(false);
       setImageToEditUrl(null);
-  };
+  }, []);
 
-  const handleMagicEditGenerate = async (maskBase64: string, prompt: string) => {
+  const handleMagicEditGenerate = useCallback(async (maskBase64: string, prompt: string) => {
       if (!imageToEditUrl || !generatedImageUrls) {
         setError('Nenhuma imagem selecionada para edição.');
         return;
@@ -173,6 +271,32 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   
       setIsLoading(true);
       setError(null);
+
+      if (isDevMode) {
+        setTimeout(async () => {
+          if (originalImage && generatedImageUrls) {
+            try {
+              const newMockUrl = await createMockImageWithText(originalImage, 'EDIÇÃO MÁGICA');
+              const imageToUndo = imageToEditUrl;
+              const updatedUrls = [...generatedImageUrls];
+              updatedUrls[selectedGeneratedImageIndex] = newMockUrl;
+  
+              onUndoImageUrlChange(imageToUndo);
+              onUndoIndexChange(selectedGeneratedImageIndex);
+              onRedoImageUrlChange(null); // Clear redo history on new action
+              onRedoIndexChange(null);
+              onGeneratedImageUrlsChange(updatedUrls);
+              handleCloseMaskEditor();
+              setShowModificationUI(false);
+              setIsRefiningInFullScreen(false);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
+            }
+          }
+          setIsLoading(false);
+        }, 500);
+        return;
+      }
 
       const imageToUndo = imageToEditUrl;
       
@@ -197,7 +321,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       } finally {
         setIsLoading(false);
       }
-  };
+  }, [isDevMode, originalImage, imageToEditUrl, generatedImageUrls, selectedGeneratedImageIndex, onGeneratedImageUrlsChange, handleCloseMaskEditor, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleUndoClick = useCallback(() => {
     if (undoImageUrl && undoIndex !== null && generatedImageUrls) {
@@ -317,20 +441,30 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               </div>
             ) : (
               <div>
-                <button
-                  onClick={handleGenerateClick}
-                  disabled={!originalImage || !isPromptProvided || isLoading}
-                  className="w-full flex justify-center items-center gap-2 bg-brand-blue hover:bg-brand-blue/90 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-brand-blue/20"
-                >
-                  {isLoading ? (
-                    <>
-                      <SpinnerIcon />
-                      Gerando o Futuro...
-                    </>
-                  ) : (
-                    'Re-imagine O Futuro'
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleGenerateClick}
+                    disabled={!originalImage || !isPromptProvided || isLoading}
+                    className="w-full flex justify-center items-center gap-2 bg-brand-blue hover:bg-brand-blue/90 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-brand-blue/20"
+                  >
+                    {isLoading ? (
+                      <>
+                        <SpinnerIcon />
+                        Gerando o Futuro...
+                      </>
+                    ) : (
+                      'Re-imagine O Futuro'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDevMode(prev => !prev)}
+                    className={`px-3 py-3 rounded-lg text-white font-bold transition-colors text-sm flex-shrink-0 ${isDevMode ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600 hover:bg-gray-500'}`}
+                    title={isDevMode ? 'Modo DEV Ativado (sem uso de API)' : 'Ativar Modo DEV'}
+                  >
+                    DEV
+                  </button>
+                </div>
                 {!isPromptProvided && originalImage && !isLoading && (
                   <p className="text-yellow-400 text-center text-sm mt-2">
                     Adicione uma descrição ao cenário ou um prompt customizado para continuar.
