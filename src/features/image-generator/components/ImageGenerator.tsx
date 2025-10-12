@@ -183,6 +183,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   const [imageToEditUrl, setImageToEditUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'result' | 'history'>('result');
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const selectedScenario = scenarios.find(s => s.value === selectedScenarioValue) || scenarios[0];
   const selectedGeneratedImageUrl = generatedImageUrls ? generatedImageUrls[selectedGeneratedImageIndex] : null;
@@ -230,6 +231,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       return;
     }
 
+    const isFirstGeneration = generationHistory.length === 0;
+
     setIsLoading(true);
     setError(null);
     onGeneratedImageUrlsChange(null);
@@ -264,6 +267,10 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             };
             onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
             onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: mockUrls }));
+
+            if (isFirstGeneration) {
+                setIsFullScreen(true);
+            }
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
           }
@@ -290,13 +297,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       };
       onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
       onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: newUrls }));
+
+      if (isFirstGeneration) {
+        setIsFullScreen(true);
+      }
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange, numberOfGenerations]);
+  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange, numberOfGenerations, generationHistory]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -720,6 +731,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                 onModificationPromptChange={setModificationPrompt}
                 onModificationGenerateClick={handleModificationGenerateClick}
                 onOpenMaskEditor={handleOpenMaskEditor}
+                isFullScreen={isFullScreen}
+                onIsFullScreenChange={setIsFullScreen}
               />
             ) : (
               <GenerationHistoryPanel 

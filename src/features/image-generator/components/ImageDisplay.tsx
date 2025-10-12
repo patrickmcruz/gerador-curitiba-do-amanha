@@ -24,6 +24,9 @@ interface ImageDisplayProps {
   onModificationPromptChange: (prompt: string) => void;
   onModificationGenerateClick: () => void;
   onOpenMaskEditor: (imageUrl: string) => void;
+  // Fullscreen state
+  isFullScreen: boolean;
+  onIsFullScreenChange: (value: boolean) => void;
 }
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ 
@@ -44,18 +47,19 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   onModificationPromptChange,
   onModificationGenerateClick,
   onOpenMaskEditor,
+  isFullScreen,
+  onIsFullScreenChange,
 }) => {
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
 
   const selectedImageUrl = imageUrls ? imageUrls[selectedImageIndex] : null;
 
   const closeFullScreen = useCallback(() => {
-    setIsFullScreen(false);
+    onIsFullScreenChange(false);
     setIsComparing(false); // Reset comparison mode on close
     onIsRefiningInFullScreenChange(false); // Reset refinement mode on close
-  }, [onIsRefiningInFullScreenChange]);
+  }, [onIsFullScreenChange, onIsRefiningInFullScreenChange]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -178,7 +182,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
               src={selectedImageUrl} 
               alt="Resultado Gerado" 
               className="object-cover w-full h-full"
-              onClick={() => canBeMaximized && setIsFullScreen(true)}
+              onClick={() => canBeMaximized && onIsFullScreenChange(true)}
               style={{ cursor: canBeMaximized ? 'zoom-in' : 'default' }}
             />
 
@@ -231,7 +235,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 </button>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); setIsFullScreen(true); }}
+                onClick={(e) => { e.stopPropagation(); onIsFullScreenChange(true); }}
                 className="bg-gray-800 bg-opacity-60 hover:bg-opacity-80 text-white font-bold p-3 rounded-full transition-all duration-300 transform hover:scale-110 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
                 aria-label="View image fullscreen"
                 title="Tela cheia"

@@ -1,14 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Scenario } from '../constants';
+import { Scenario, SCENARIOS } from '../constants';
 
 interface ScenarioFormProps {
-  initialScenarios: Scenario[];
   onSave: (scenarios: Scenario[]) => void;
   onCancel: () => void;
 }
 
-export const ScenarioForm: React.FC<ScenarioFormProps> = ({ initialScenarios, onSave, onCancel }) => {
-  const [scenarios, setScenarios] = useState<Scenario[]>(initialScenarios);
+export const ScenarioForm: React.FC<ScenarioFormProps> = ({ onSave, onCancel }) => {
+  const [scenarios, setScenarios] = useState<Scenario[]>(() => {
+    try {
+      const savedScenarios = localStorage.getItem('futureScenarios');
+      return savedScenarios ? JSON.parse(savedScenarios) : SCENARIOS;
+    } catch (e) {
+      console.error("Failed to parse scenarios from localStorage", e);
+      return SCENARIOS;
+    }
+  });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevScenariosLength = useRef(scenarios.length);
 
@@ -47,6 +54,11 @@ export const ScenarioForm: React.FC<ScenarioFormProps> = ({ initialScenarios, on
   const handleRemoveScenario = (index: number) => {
     const newScenarios = scenarios.filter((_, i) => i !== index);
     setScenarios(newScenarios);
+  };
+
+  const handleSaveChanges = () => {
+    localStorage.setItem('futureScenarios', JSON.stringify(scenarios));
+    onSave(scenarios);
   };
 
   return (
@@ -115,7 +127,7 @@ export const ScenarioForm: React.FC<ScenarioFormProps> = ({ initialScenarios, on
           Cancelar
         </button>
         <button
-          onClick={() => onSave(scenarios)}
+          onClick={handleSaveChanges}
           className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold py-2 px-6 rounded-lg transition-all"
         >
           Salvar mudanças

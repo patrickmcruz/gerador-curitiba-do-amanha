@@ -106,78 +106,81 @@ export const HomePage: React.FC = () => {
     }
   }, [scenarios, selectedScenarioValue]);
 
-  // Save history to localStorage whenever relevant state changes
+  // Save history to localStorage whenever relevant state changes, with debouncing
   useEffect(() => {
-    if (currentImageId && originalImageUrl) {
-      const saveData = async () => {
-        // This function recursively tries to save, pruning history if it exceeds the quota.
-        const trySave = async (
-          history: HistoryEntry[],
-          snapshots: Record<string, string[]>,
-          currentGenerated: string[] | null
-        ) => {
-          try {
-            // Compress all image data before attempting to save.
-            const compressedOriginal = await compressImage(originalImageUrl);
-            const compressedGenerated = currentGenerated
-              ? await Promise.all(currentGenerated.map(url => compressImage(url)))
-              : null;
-            
-            const compressedSnapshots: Record<string, string[]> = {};
-            for (const key in snapshots) {
-              if (Object.prototype.hasOwnProperty.call(snapshots, key)) {
-                compressedSnapshots[key] = await Promise.all(
-                  snapshots[key].map(url => compressImage(url))
-                );
+    const debounceSave = setTimeout(() => {
+      if (currentImageId && originalImageUrl) {
+        const saveData = async () => {
+          // This function recursively tries to save, pruning history if it exceeds the quota.
+          const trySave = async (
+            history: HistoryEntry[],
+            snapshots: Record<string, string[]>,
+            currentGenerated: string[] | null
+          ) => {
+            try {
+              // Compress all image data before attempting to save.
+              const compressedOriginal = await compressImage(originalImageUrl);
+              const compressedGenerated = currentGenerated
+                ? await Promise.all(currentGenerated.map(url => compressImage(url)))
+                : null;
+              
+              const compressedSnapshots: Record<string, string[]> = {};
+              for (const key in snapshots) {
+                if (Object.prototype.hasOwnProperty.call(snapshots, key)) {
+                  compressedSnapshots[key] = await Promise.all(
+                    snapshots[key].map(url => compressImage(url))
+                  );
+                }
+              }
+
+              const stateToSave = {
+                originalImageUrl: compressedOriginal,
+                generatedImageUrls: compressedGenerated,
+                selectedGeneratedImageIndex,
+                selectedScenarioValue,
+                customPrompt,
+                generationHistory: history,
+                historySnapshots: compressedSnapshots,
+              };
+
+              localStorage.setItem(`history_${currentImageId}`, JSON.stringify(stateToSave));
+
+              if (history.length < generationHistory.length) {
+                setGenerationHistory(history);
+                setHistorySnapshots(snapshots);
+              }
+            } catch (e) {
+              if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') && history.length > 0) {
+                console.warn("LocalStorage quota exceeded. Pruning oldest history entry and retrying.");
+                const historyCopy = [...history];
+                const snapshotsCopy = { ...snapshots };
+                const oldestEntry = historyCopy.pop(); // Oldest is at the end
+
+                if (oldestEntry) {
+                  delete snapshotsCopy[oldestEntry.id];
+                  // Retry recursively with the smaller (uncompressed) data. It will be compressed on the next try.
+                  await trySave(historyCopy, snapshotsCopy, currentGenerated);
+                }
+              } else {
+                console.error("Failed to save history to localStorage.", e);
               }
             }
+          };
 
-            const stateToSave = {
-              originalImageUrl: compressedOriginal,
-              generatedImageUrls: compressedGenerated,
-              selectedGeneratedImageIndex,
-              selectedScenarioValue,
-              customPrompt,
-              generationHistory: history,
-              historySnapshots: compressedSnapshots,
-            };
-
-            localStorage.setItem(`history_${currentImageId}`, JSON.stringify(stateToSave));
-
-            if (history.length < generationHistory.length) {
-              setGenerationHistory(history);
-              setHistorySnapshots(snapshots);
-            }
-          } catch (e) {
-            if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') && history.length > 0) {
-              console.warn("LocalStorage quota exceeded. Pruning oldest history entry and retrying.");
-              const historyCopy = [...history];
-              const snapshotsCopy = { ...snapshots };
-              const oldestEntry = historyCopy.pop(); // Oldest is at the end
-
-              if (oldestEntry) {
-                delete snapshotsCopy[oldestEntry.id];
-                // Retry recursively with the smaller (uncompressed) data. It will be compressed on the next try.
-                await trySave(historyCopy, snapshotsCopy, currentGenerated);
-              }
-            } else {
-              console.error("Failed to save history to localStorage.", e);
-            }
-          }
+          // Kick off the save process with the current full-resolution state.
+          trySave(generationHistory, historySnapshots, generatedImageUrls).catch(err => console.error("Error during background save process:", err));
         };
 
-        // Kick off the save process with the current full-resolution state.
-        await trySave(generationHistory, historySnapshots, generatedImageUrls);
-      };
+        saveData();
+      }
+    }, 1000); // 1-second debounce delay.
 
-      saveData().catch(err => console.error("Error during background save process:", err));
-    }
+    return () => clearTimeout(debounceSave);
   }, [currentImageId, originalImageUrl, generatedImageUrls, selectedGeneratedImageIndex, selectedScenarioValue, customPrompt, generationHistory, historySnapshots]);
 
 
   const handleSaveScenarios = (updatedScenarios: Scenario[]) => {
     setScenarios(updatedScenarios);
-    localStorage.setItem('futureScenarios', JSON.stringify(updatedScenarios));
     setPage('main');
   };
 
@@ -241,7 +244,6 @@ export const HomePage: React.FC = () => {
       case 'form':
         return (
             <ScenarioForm
-              initialScenarios={scenarios}
               onSave={handleSaveScenarios}
               onCancel={() => setPage('main')}
             />
