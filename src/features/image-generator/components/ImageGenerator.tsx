@@ -17,6 +17,8 @@ interface ImageGeneratorProps {
     onCustomPromptChange: (value: string) => void;
     numberOfGenerations: number;
     isDevMode: boolean;
+    timeDirection: 'future' | 'past';
+    timeYears: number;
     originalImage: File | null;
     originalImageUrl: string | null;
     generatedImageUrls: string[] | null;
@@ -148,6 +150,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onCustomPromptChange,
     numberOfGenerations,
     isDevMode,
+    timeDirection,
+    timeYears,
     originalImage,
     originalImageUrl,
     generatedImageUrls,
@@ -188,8 +192,6 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 
   const selectedScenario = scenarios.find(s => s.value === selectedScenarioValue) || scenarios[0];
   const selectedGeneratedImageUrl = generatedImageUrls ? generatedImageUrls[selectedGeneratedImageIndex] : null;
-  const futureYearValue = 25;
-  const futureYearLabel = t('imageDisplay.futureYearLabel', '25 Years');
 
   const getNewSuggestions = useCallback((scenarioValue: string) => {
     const suggestionsKey = `promptSuggestions.${scenarioValue}`;
@@ -251,8 +253,9 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onRedoIndexChange(null);
     setActiveTab('result');
     
-    const fullPrompt = t('prompts.initial', {
-        year: futureYearValue,
+    const promptKey = timeDirection === 'future' ? 'prompts.initialFuture' : 'prompts.initialPast';
+    const fullPrompt = t(promptKey, {
+        year: timeYears,
         scenarioLabel: selectedScenario.label,
         scenarioDescription: selectedScenario.description,
         customPrompt: customPrompt,
@@ -325,7 +328,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange, numberOfGenerations, t, generationHistory, futureYearValue]);
+  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange, numberOfGenerations, t, generationHistory, timeDirection, timeYears]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls || !selectedScenario) {
@@ -771,12 +774,9 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             
             {activeTab === 'result' ? (
               <ImageDisplay
-                subtitle={generatedImageUrls ? t('imageDisplay.subtitle', {
-                    futureYearLabel,
-                    scenarioLabel: selectedScenario?.label,
-                    selectedIndex: selectedGeneratedImageIndex + 1,
-                    total: generatedImageUrls.length
-                }) : undefined}
+                scenarioLabel={generatedImageUrls ? selectedScenario?.label : undefined}
+                timeDirection={timeDirection}
+                timeYears={timeYears}
                 originalImageUrl={originalImageUrl}
                 imageUrls={generatedImageUrls}
                 isLoading={isLoading}

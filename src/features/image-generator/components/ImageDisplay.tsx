@@ -6,7 +6,7 @@ import { ImageComparisonSlider } from './ImageComparisonSlider';
 declare const JSZip: any;
 
 interface ImageDisplayProps {
-  subtitle?: string;
+  scenarioLabel?: string;
   imageUrls: string[] | null;
   originalImageUrl: string | null;
   isLoading?: boolean;
@@ -25,10 +25,12 @@ interface ImageDisplayProps {
   onOpenMaskEditor: (imageUrl: string) => void;
   isFullScreen: boolean;
   onIsFullScreenChange: (value: boolean) => void;
+  timeDirection: 'future' | 'past';
+  timeYears: number;
 }
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ 
-  subtitle, 
+  scenarioLabel, 
   imageUrls, 
   originalImageUrl, 
   isLoading, 
@@ -47,6 +49,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   onOpenMaskEditor,
   isFullScreen,
   onIsFullScreenChange,
+  timeDirection,
+  timeYears,
 }) => {
   const { t } = useTranslation();
   const [isComparing, setIsComparing] = useState(false);
@@ -165,9 +169,19 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
   const { prev: prevImageUrl, next: nextImageUrl } = getNavUrls();
 
+  const timeLabel = timeDirection === 'past' ? `-${timeYears}` : `+${timeYears}`;
+  const generatedSubtitle = imageUrls && scenarioLabel ? t('imageDisplay.subtitle', {
+      timeTravelPrefix: t('imageDisplay.timeTravelPrefix'),
+      timeLabel,
+      yearsLabel: t('imageDisplay.yearsLabel', { count: timeYears }),
+      scenarioLabel,
+      selectedIndex: selectedImageIndex + 1,
+      total: imageUrls.length
+  }) : undefined;
+
   return (
     <div className="w-full flex flex-col h-full">
-      {subtitle && <p className="text-sm text-gray-400 mb-2">{subtitle}</p>}
+      {generatedSubtitle && <p className="text-sm text-gray-400 mb-2">{generatedSubtitle}</p>}
       <div
         className="relative group w-full flex-grow bg-gray-700/50 rounded-lg flex items-center justify-center border border-gray-700 overflow-hidden"
       >

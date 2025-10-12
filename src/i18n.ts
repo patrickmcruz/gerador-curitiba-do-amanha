@@ -40,6 +40,14 @@ const translationEN = {
       "on": "Enabled",
       "off": "Disabled"
     },
+    "timeTravel": {
+      "title": "Time Travel",
+      "directionLabel": "Direction",
+      "future": "Future",
+      "past": "Past",
+      "yearsLabel": "Years to travel",
+      "description": "Choose to see the city in the future or the past, and how many years to travel."
+    },
     "buttons": {
       "save": "Save Settings",
       "cancel": "Cancel",
@@ -98,8 +106,10 @@ const translationEN = {
     "fullscreenTitle": "Original image preview"
   },
   "imageDisplay": {
-    "subtitle": "Future: +{{futureYearLabel}} ({{scenarioLabel}}) - Variation {{selectedIndex}}/{{total}}",
-    "futureYearLabel": "25 Years",
+    "subtitle": "{{timeTravelPrefix}}: {{timeLabel}} {{yearsLabel}} ({{scenarioLabel}}) - Variation {{selectedIndex}}/{{total}}",
+    "timeTravelPrefix": "Time Travel",
+    "yearsLabel_one": "Year",
+    "yearsLabel_other": "Years",
     "placeholder": "Your generated image will appear here",
     "variation": "Variation {{index}}",
     "undo": "Undo",
@@ -183,7 +193,8 @@ const translationEN = {
     "invalidBase64": "Invalid base64 data provided."
   },
   "prompts": {
-    "initial": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the future, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technological integration, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
+    "initialFuture": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the future, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technological integration, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
+    "initialPast": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the past, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technology of that era, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
     "refineWithText": "This is a photorealistic, futuristic image of Curitiba, Brazil, in a {{scenarioLabel}} scenario. The original creation was guided by this description: \"{{customPrompt}}\". Generate a new version of this image that incorporates this specific modification: \"{{modificationPrompt}}\". It's crucial to maintain the established futuristic {{scenarioLabel}} aesthetic, focusing on architecture, technology, and environment.",
     "refineWithMask": "You are an expert photo editor. Use the second image as a mask on the first image. The white area of the mask indicates the region to be modified. Apply the following instruction ONLY to the masked region: \"{{prompt}}\". The rest of the image must remain unchanged. Return only the complete, edited image."
   }
@@ -226,6 +237,14 @@ const translationPTBR = {
       "description": "Quando ativado, os cenários 'Otimista' e 'Pessimista' iniciarão com uma descrição preenchida baseada em temas comuns. Desative se preferir começar com uma tela em branco.",
       "on": "Ativado",
       "off": "Desativado"
+    },
+    "timeTravel": {
+      "title": "Viagem no Tempo",
+      "directionLabel": "Direção",
+      "future": "Futuro",
+      "past": "Passado",
+      "yearsLabel": "Anos para viajar",
+      "description": "Escolha ver a cidade no futuro ou no passado, e quantos anos viajar."
     },
     "buttons": {
       "save": "Salvar Configurações",
@@ -285,8 +304,10 @@ const translationPTBR = {
     "fullscreenTitle": "Visualização da imagem original"
   },
   "imageDisplay": {
-    "subtitle": "Futuro: +{{futureYearLabel}} ({{scenarioLabel}}) - Variação {{selectedIndex}}/{{total}}",
-    "futureYearLabel": "25 Anos",
+    "subtitle": "{{timeTravelPrefix}}: {{timeLabel}} {{yearsLabel}} ({{scenarioLabel}}) - Variação {{selectedIndex}}/{{total}}",
+    "timeTravelPrefix": "Viagem no Tempo",
+    "yearsLabel_one": "Ano",
+    "yearsLabel_other": "Anos",
     "placeholder": "Sua imagem gerada aparecerá aqui",
     "variation": "Variação {{index}}",
     "undo": "Desfazer",
@@ -370,7 +391,8 @@ const translationPTBR = {
     "invalidBase64": "Dados base64 inválidos fornecidos."
   },
   "prompts": {
-    "initial": "Recriação fotorrealista desta imagem de paisagem urbana de Curitiba, Brasil. Projete-a {{year}} anos no futuro, adotando uma perspectiva {{scenarioLabel}}. Foco em mudanças arquitetônicas, integração tecnológica e aspectos ambientais. {{scenarioDescription}}. Por favor, incorpore também estes detalhes específicos solicitados pelo usuário: \"{{customPrompt}}\".",
+    "initialFuture": "Recriação fotorrealista desta imagem de paisagem urbana de Curitiba, Brasil. Projete-a {{year}} anos no futuro, adotando uma perspectiva {{scenarioLabel}}. Foco em mudanças arquitetônicas, integração tecnológica e aspectos ambientais. {{scenarioDescription}}. Por favor, incorpore também estes detalhes específicos solicitados pelo usuário: \"{{customPrompt}}\".",
+    "initialPast": "Recriação fotorrealista desta imagem de paisagem urbana de Curitiba, Brasil. Projete-a {{year}} anos no passado, adotando uma perspectiva {{scenarioLabel}}. Foco em mudanças arquitetônicas, tecnologia daquela época e aspectos ambientais. {{scenarioDescription}}. Por favor, incorpore também estes detalhes específicos solicitados pelo usuário: \"{{customPrompt}}\".",
     "refineWithText": "Esta é uma imagem fotorrealista e futurista de Curitiba, Brasil, em um cenário {{scenarioLabel}}. A criação original foi guiada por esta descrição: \"{{customPrompt}}\". Gere uma nova versão desta imagem que incorpore esta modificação específica: \"{{modificationPrompt}}\". É crucial manter a estética futurista {{scenarioLabel}} estabelecida, com foco em arquitetura, tecnologia e meio ambiente.",
     "refineWithMask": "Você é um editor de fotos especialista. Use a segunda imagem como uma máscara na primeira imagem. A área branca da máscara indica a região a ser modificada. Aplique a seguinte instrução SOMENTE à região mascarada: \"{{prompt}}\". O restante da imagem deve permanecer inalterado. Retorne apenas a imagem completa e editada."
   }

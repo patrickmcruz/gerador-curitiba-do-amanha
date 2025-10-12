@@ -36,6 +36,14 @@
       "on": "Enabled",
       "off": "Disabled"
     },
+    "timeTravel": {
+      "title": "Time Travel",
+      "directionLabel": "Direction",
+      "future": "Future",
+      "past": "Past",
+      "yearsLabel": "Years to travel",
+      "description": "Choose to see the city in the future or the past, and how many years to travel."
+    },
     "buttons": {
       "save": "Save Settings",
       "cancel": "Cancel",
@@ -94,8 +102,10 @@
     "fullscreenTitle": "Original image preview"
   },
   "imageDisplay": {
-    "subtitle": "Future: +{{futureYearLabel}} ({{scenarioLabel}}) - Variation {{selectedIndex}}/{{total}}",
-    "futureYearLabel": "25 Years",
+    "subtitle": "{{timeTravelPrefix}}: {{timeLabel}} {{yearsLabel}} ({{scenarioLabel}}) - Variation {{selectedIndex}}/{{total}}",
+    "timeTravelPrefix": "Time Travel",
+    "yearsLabel_one": "Year",
+    "yearsLabel_other": "Years",
     "placeholder": "Your generated image will appear here",
     "variation": "Variation {{index}}",
     "undo": "Undo",
@@ -179,7 +189,8 @@
     "invalidBase64": "Invalid base64 data provided."
   },
   "prompts": {
-    "initial": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the future, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technological integration, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
+    "initialFuture": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the future, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technological integration, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
+    "initialPast": "Photorealistic re-imagination of this cityscape image from Curitiba, Brazil. Project it {{year}} years into the past, adopting a {{scenarioLabel}} perspective. Focus on architectural changes, technology of that era, and environmental aspects. {{scenarioDescription}}. Please also incorporate these specific user-requested details: \"{{customPrompt}}\".",
     "refineWithText": "This is a photorealistic, futuristic image of Curitiba, Brazil, in a {{scenarioLabel}} scenario. The original creation was guided by this description: \"{{customPrompt}}\". Generate a new version of this image that incorporates this specific modification: \"{{modificationPrompt}}\". It's crucial to maintain the established futuristic {{scenarioLabel}} aesthetic, focusing on architecture, technology, and environment.",
     "refineWithMask": "You are an expert photo editor. Use the second image as a mask on the first image. The white area of the mask indicates the region to be modified. Apply the following instruction ONLY to the masked region: \"{{prompt}}\". The rest of the image must remain unchanged. Return only the complete, edited image."
   }

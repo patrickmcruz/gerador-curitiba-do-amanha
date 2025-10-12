@@ -139,6 +139,27 @@ export const HomePage: React.FC = () => {
         return false;
     }
   });
+  
+  const [timeDirection, setTimeDirection] = useState<'future' | 'past'>(() => {
+    try {
+        const saved = localStorage.getItem('timeDirection');
+        return (saved === 'future' || saved === 'past') ? saved : 'future';
+    } catch (e) {
+        console.error("Failed to parse timeDirection from localStorage", e);
+        return 'future';
+    }
+  });
+  
+  const [timeYears, setTimeYears] = useState<number>(() => {
+    try {
+        const saved = localStorage.getItem('timeYears');
+        const years = saved ? parseInt(saved, 10) : 25;
+        return isNaN(years) || years < 1 ? 25 : years;
+    } catch (e) {
+        console.error("Failed to parse timeYears from localStorage", e);
+        return 25;
+    }
+  });
 
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [selectedScenarioValue, setSelectedScenarioValue] = useState<string>('');
@@ -259,13 +280,23 @@ export const HomePage: React.FC = () => {
     setPage('main');
   };
 
-  const handleSaveSettings = (settings: { numberOfGenerations: number; isDevMode: boolean; prefillDescriptions: boolean; }) => {
+  const handleSaveSettings = (settings: { 
+    numberOfGenerations: number; 
+    isDevMode: boolean; 
+    prefillDescriptions: boolean; 
+    timeDirection: 'future' | 'past';
+    timeYears: number;
+  }) => {
     setNumberOfGenerations(settings.numberOfGenerations);
     localStorage.setItem('numberOfGenerations', String(settings.numberOfGenerations));
     setIsDevMode(settings.isDevMode);
     localStorage.setItem('isDevMode', JSON.stringify(settings.isDevMode));
     setPrefillDescriptions(settings.prefillDescriptions);
     localStorage.setItem('prefillDescriptions', JSON.stringify(settings.prefillDescriptions));
+    setTimeDirection(settings.timeDirection);
+    localStorage.setItem('timeDirection', settings.timeDirection);
+    setTimeYears(settings.timeYears);
+    localStorage.setItem('timeYears', String(settings.timeYears));
     setPage('main');
   };
   
@@ -355,6 +386,8 @@ export const HomePage: React.FC = () => {
                 initialNumberOfGenerations={numberOfGenerations}
                 initialIsDevMode={isDevMode}
                 initialPrefillDescriptions={prefillDescriptions}
+                initialTimeDirection={timeDirection}
+                initialTimeYears={timeYears}
                 onSave={handleSaveSettings}
                 onCancel={() => setPage('main')}
                 onPrefillDescriptionsChange={handlePrefillDescriptionChange}
@@ -371,6 +404,8 @@ export const HomePage: React.FC = () => {
               onCustomPromptChange={onCustomPromptChange}
               numberOfGenerations={numberOfGenerations}
               isDevMode={isDevMode}
+              timeDirection={timeDirection}
+              timeYears={timeYears}
               // Pass down lifted state and handlers
               originalImage={originalImage}
               originalImageUrl={originalImageUrl}
