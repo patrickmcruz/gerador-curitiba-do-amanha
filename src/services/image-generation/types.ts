@@ -5,7 +5,8 @@ export interface ImageGenerationService {
     imageFile: File,
     year: number,
     scenario: Scenario,
-    customPrompt: string
+    customPrompt: string,
+    numberOfGenerations: number
   ): Promise<string[]>;
 
   refineImageWithText(

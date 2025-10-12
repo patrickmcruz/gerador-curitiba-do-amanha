@@ -50,6 +50,13 @@ export const FullScreenIcon: React.FC = () => (
   </svg>
 );
 
+export const GearIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-.95.27.03.54.16.73.35.19.19.32.46.35.73.057.55-.4.95-.95 1.11a.5.5 0 01-.62.04c-.13-.09-.23-.21-.31-.35a.5.5 0 01.04-.62zM9.594 3.94A8.25 8.25 0 111.45 12a8.25 8.25 0 018.144-8.06z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.37a5.62 5.62 0 11-5.63 5.63A5.63 5.63 0 0112 6.37z" />
+    </svg>
+);
+
 export const PencilIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 19.07a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
@@ -68,6 +75,12 @@ export const RedoIcon: React.FC = () => (
     <path d="M16 12H3" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M13 5h4.5a2.5 2.5 0 0 1 2.5 2.5v0a2.5 2.5 0 0 1-2.5 2.5H16" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
+);
+
+export const RefreshIcon: React.FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-3.181-4.991v4.99" />
+    </svg>
 );
 
 export const SparklesIcon: React.FC = () => (

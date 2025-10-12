@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UploadIcon, FullScreenIcon, CloseIcon, PencilIcon } from '../../../components/ui/Icons';
+import { UploadIcon, FullScreenIcon, CloseIcon, PencilIcon, GearIcon } from '../../../components/ui/Icons';
 
 interface ImageUploaderProps {
   onImageUpload: (file: File) => void;
   imageUrl: string | null;
   className?: string;
+  onSettingsClick: () => void;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imageUrl, className }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imageUrl, className, onSettingsClick }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,7 +60,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, ima
 
   return (
     <div className={`flex flex-col h-full ${className || ''}`}>
-      <h2 className="text-lg font-semibold mb-2 text-gray-300">1. Suba a imagem</h2>
+      <div className="flex justify-between items-center border-b border-gray-700 mb-2">
+        <h2 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue border-b-2 border-brand-blue rounded-t-lg -mb-px">
+            1. Suba a imagem
+        </h2>
+        <button
+          onClick={onSettingsClick}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg text-gray-400 border-transparent hover:text-white"
+          aria-label="Abrir configurações"
+          title="Configurações"
+        >
+          <GearIcon />
+          <span>Configurações</span>
+        </button>
+      </div>
       <div
         onClick={imageUrl ? () => toggleFullScreen() : handleAreaClick}
         onDragOver={handleDragOver}

@@ -8,7 +8,8 @@ const generateInitialImages = async (
   imageFile: File,
   year: number,
   scenario: Scenario,
-  customPrompt: string
+  customPrompt: string,
+  numberOfGenerations: number
 ): Promise<string[]> => {
   if (!process.env.API_KEY) {
     throw new Error("Chave API_KEY não configurada.");
@@ -46,7 +47,7 @@ const generateInitialImages = async (
       return null;
     };
 
-    const imagePromises = [generateSingleImage(), generateSingleImage(), generateSingleImage()];
+    const imagePromises = Array.from({ length: numberOfGenerations }, () => generateSingleImage());
     const results = await Promise.all(imagePromises);
     const generatedImages = results.filter((img): img is string => img !== null);
 

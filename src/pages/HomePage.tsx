@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ImageGenerator } from '../features/image-generator/components/ImageGenerator';
 import { Scenario, SCENARIOS, HistoryEntry } from '../features/image-generator/constants';
 import { ScenarioForm } from '../features/image-generator/components/ScenarioForm';
+import { SettingsPage } from './SettingsPage';
 
 /**
  * Compresses an image from a data URL to a lower-quality JPEG format.
@@ -43,7 +44,7 @@ const compressImage = (dataUrl: string, targetWidth: number = 1024, quality: num
 };
 
 export const HomePage: React.FC = () => {
-  const [page, setPage] = useState<'main' | 'form'>('main');
+  const [page, setPage] = useState<'main' | 'form' | 'settings'>('main');
   const [customPrompt, setCustomPrompt] = useState<string>('');
 
   // State lifted from ImageGenerator
@@ -62,6 +63,28 @@ export const HomePage: React.FC = () => {
   const [currentImageId, setCurrentImageId] = useState<string | null>(null);
   const [generationHistory, setGenerationHistory] = useState<HistoryEntry[]>([]);
   const [historySnapshots, setHistorySnapshots] = useState<Record<string, string[]>>({});
+  
+  // App settings state
+  const [numberOfGenerations, setNumberOfGenerations] = useState<number>(() => {
+    try {
+        const savedCount = localStorage.getItem('numberOfGenerations');
+        return savedCount ? parseInt(savedCount, 10) : 3;
+    } catch (e) {
+        console.error("Failed to parse numberOfGenerations from localStorage", e);
+        return 3;
+    }
+  });
+
+  const [isDevMode, setIsDevMode] = useState<boolean>(() => {
+    try {
+        const savedDevMode = localStorage.getItem('isDevMode');
+        // Default to true if not set
+        return savedDevMode ? JSON.parse(savedDevMode) : true;
+    } catch (e) {
+        console.error("Failed to parse isDevMode from localStorage", e);
+        return true;
+    }
+  });
 
 
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
@@ -158,6 +181,14 @@ export const HomePage: React.FC = () => {
     setPage('main');
   };
 
+  const handleSaveSettings = (settings: { numberOfGenerations: number; isDevMode: boolean }) => {
+    setNumberOfGenerations(settings.numberOfGenerations);
+    localStorage.setItem('numberOfGenerations', String(settings.numberOfGenerations));
+    setIsDevMode(settings.isDevMode);
+    localStorage.setItem('isDevMode', JSON.stringify(settings.isDevMode));
+    setPage('main');
+  };
+
   const handleImageUpload = useCallback((file: File) => {
     const imageId = `${file.name}-${file.size}-${file.lastModified}`;
     setCurrentImageId(imageId);
@@ -205,46 +236,64 @@ export const HomePage: React.FC = () => {
     setRedoIndex(null);
   }, [scenarios]);
 
-  return (
-    <>
-      {page === 'main' ? (
-        <ImageGenerator
-          scenarios={scenarios}
-          onManageScenarios={() => setPage('form')}
-          customPrompt={customPrompt}
-          onCustomPromptChange={setCustomPrompt}
-          // Pass down lifted state and handlers
-          originalImage={originalImage}
-          originalImageUrl={originalImageUrl}
-          generatedImageUrls={generatedImageUrls}
-          selectedGeneratedImageIndex={selectedGeneratedImageIndex}
-          selectedScenarioValue={selectedScenarioValue}
-          onImageUpload={handleImageUpload}
-          onGeneratedImageUrlsChange={setGeneratedImageUrls}
-          onSelectedGeneratedImageIndexChange={setSelectedGeneratedImageIndex}
-          onSelectedScenarioValueChange={setSelectedScenarioValue}
-          // Pass down undo/redo state and handlers
-          undoImageUrl={undoImageUrl}
-          undoIndex={undoIndex}
-          redoImageUrl={redoImageUrl}
-          redoIndex={redoIndex}
-          onUndoImageUrlChange={setUndoImageUrl}
-          onUndoIndexChange={setUndoIndex}
-          onRedoImageUrlChange={setRedoImageUrl}
-          onRedoIndexChange={setRedoIndex}
-          // History state
-          generationHistory={generationHistory}
-          onGenerationHistoryChange={setGenerationHistory}
-          historySnapshots={historySnapshots}
-          onHistorySnapshotsChange={setHistorySnapshots}
-        />
-      ) : (
-        <ScenarioForm
-          initialScenarios={scenarios}
-          onSave={handleSaveScenarios}
-          onCancel={() => setPage('main')}
-        />
-      )}
-    </>
-  );
+  const renderPage = () => {
+    switch(page) {
+      case 'form':
+        return (
+            <ScenarioForm
+              initialScenarios={scenarios}
+              onSave={handleSaveScenarios}
+              onCancel={() => setPage('main')}
+            />
+        );
+      case 'settings':
+        return (
+            <SettingsPage
+                initialNumberOfGenerations={numberOfGenerations}
+                initialIsDevMode={isDevMode}
+                onSave={handleSaveSettings}
+                onCancel={() => setPage('main')}
+            />
+        );
+      case 'main':
+      default:
+        return (
+            <ImageGenerator
+              scenarios={scenarios}
+              onManageScenarios={() => setPage('form')}
+              onSettingsClick={() => setPage('settings')}
+              customPrompt={customPrompt}
+              onCustomPromptChange={setCustomPrompt}
+              numberOfGenerations={numberOfGenerations}
+              isDevMode={isDevMode}
+              // Pass down lifted state and handlers
+              originalImage={originalImage}
+              originalImageUrl={originalImageUrl}
+              generatedImageUrls={generatedImageUrls}
+              selectedGeneratedImageIndex={selectedGeneratedImageIndex}
+              selectedScenarioValue={selectedScenarioValue}
+              onImageUpload={handleImageUpload}
+              onGeneratedImageUrlsChange={setGeneratedImageUrls}
+              onSelectedGeneratedImageIndexChange={setSelectedGeneratedImageIndex}
+              onSelectedScenarioValueChange={setSelectedScenarioValue}
+              // Pass down undo/redo state and handlers
+              undoImageUrl={undoImageUrl}
+              undoIndex={undoIndex}
+              redoImageUrl={redoImageUrl}
+              redoIndex={redoIndex}
+              onUndoImageUrlChange={setUndoImageUrl}
+              onUndoIndexChange={setUndoIndex}
+              onRedoImageUrlChange={setRedoImageUrl}
+              onRedoIndexChange={setRedoIndex}
+              // History state
+              generationHistory={generationHistory}
+              onGenerationHistoryChange={setGenerationHistory}
+              historySnapshots={historySnapshots}
+              onHistorySnapshotsChange={setHistorySnapshots}
+            />
+        );
+    }
+  }
+
+  return <>{renderPage()}</>;
 };

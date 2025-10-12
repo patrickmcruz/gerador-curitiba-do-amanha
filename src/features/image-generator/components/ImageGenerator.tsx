@@ -1,18 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ImageUploader } from './ImageUploader';
 import { ImageDisplay } from './ImageDisplay';
 import { ScenarioSelector } from './ScenarioSelector';
 import { ImageMaskEditor } from './ImageMaskEditor';
 import { GenerationHistoryPanel } from './GenerationHistoryPanel';
 import { imageGenerationService } from '../../../services/image-generation';
-import { Scenario, HistoryEntry } from '../constants';
-import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon } from '../../../components/ui/Icons';
+import { Scenario, HistoryEntry, PROMPT_SUGGESTIONS } from '../constants';
+import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon, RefreshIcon } from '../../../components/ui/Icons';
 
 interface ImageGeneratorProps {
     scenarios: Scenario[];
     onManageScenarios: () => void;
+    onSettingsClick: () => void;
     customPrompt: string;
-    onCustomPromptChange: (prompt: string) => void;
+    onCustomPromptChange: React.Dispatch<React.SetStateAction<string>>;
+    numberOfGenerations: number;
+    isDevMode: boolean;
     // Lifted state props
     originalImage: File | null;
     originalImageUrl: string | null;
@@ -142,9 +145,12 @@ const createThumbnail = (dataUrl: string, targetWidth: number = 128, quality: nu
 
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
     scenarios, 
-    onManageScenarios, 
+    onManageScenarios,
+    onSettingsClick,
     customPrompt, 
     onCustomPromptChange,
+    numberOfGenerations,
+    isDevMode,
     originalImage,
     originalImageUrl,
     generatedImageUrls,
@@ -175,13 +181,24 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   const [modificationPrompt, setModificationPrompt] = useState<string>('');
   const [isMaskEditorOpen, setIsMaskEditorOpen] = useState(false);
   const [imageToEditUrl, setImageToEditUrl] = useState<string | null>(null);
-  const [isDevMode, setIsDevMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'result' | 'history'>('result');
-  
+  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
+
   const selectedScenario = scenarios.find(s => s.value === selectedScenarioValue) || scenarios[0];
   const selectedGeneratedImageUrl = generatedImageUrls ? generatedImageUrls[selectedGeneratedImageIndex] : null;
   const futureYearValue = 25;
   const futureYearLabel = '25 Anos';
+
+  const getNewSuggestions = useCallback((scenarioValue: string) => {
+    const allSuggestions = PROMPT_SUGGESTIONS[scenarioValue] || [];
+    // Shuffle and pick a few suggestions to display
+    const shuffled = [...allSuggestions].sort(() => 0.5 - Math.random());
+    setCurrentSuggestions(shuffled.slice(0, 3));
+  }, []);
+
+  useEffect(() => {
+    getNewSuggestions(selectedScenarioValue);
+  }, [selectedScenarioValue, getNewSuggestions]);
   
   const handleScenarioChange = (scenario: Scenario) => {
     onSelectedScenarioValueChange(scenario.value);
@@ -194,6 +211,10 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     setShowModificationUI(false);
     setModificationPrompt('');
     setActiveTab('result');
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    onCustomPromptChange(prev => prev ? `${prev}, ${suggestion}` : suggestion);
   };
   
   const isPromptProvided = selectedScenario?.description?.trim() !== '' || customPrompt.trim() !== '';
@@ -225,11 +246,12 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         if (originalImage) {
           try {
             const fullPrompt = `Cenário: ${selectedScenario.label}. ${customPrompt || selectedScenario.description}`;
-            const mockUrls = await Promise.all([
-              createMockImageWithText(originalImage, `[DEV MOCK 1] ${fullPrompt}`),
-              createMockImageWithText(originalImage, `[DEV MOCK 2] ${fullPrompt}`),
-              createMockImageWithText(originalImage, `[DEV MOCK 3] ${fullPrompt}`),
-            ]);
+            
+            const mockPromises = Array.from({ length: numberOfGenerations }, (_, i) => 
+                createMockImageWithText(originalImage, `[DEV MOCK ${i + 1}] ${fullPrompt}`)
+            );
+
+            const mockUrls = await Promise.all(mockPromises);
             onGeneratedImageUrlsChange(mockUrls);
             const thumbnailUrl = await createThumbnail(mockUrls[0]);
             const newHistoryEntry: HistoryEntry = {
@@ -252,7 +274,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     }
 
     try {
-      const generatedImageBase64Array = await imageGenerationService.generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt);
+      const generatedImageBase64Array = await imageGenerationService.generateInitialImages(originalImage, futureYearValue, selectedScenario, customPrompt, numberOfGenerations);
       const newUrls = generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`);
       onGeneratedImageUrlsChange(newUrls);
 
@@ -274,7 +296,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange]);
+  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange, numberOfGenerations]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -521,6 +543,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
           <ImageUploader 
             onImageUpload={handleImageUpload} 
             imageUrl={originalImageUrl}
+            onSettingsClick={onSettingsClick}
             className="md:col-span-3"
           />
 
@@ -547,6 +570,31 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                 selectedScenario={selectedScenario}
                 onScenarioChange={handleScenarioChange}
               />
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-1">
+                    <label htmlFor="prompt-suggestions" className="block text-sm font-medium text-gray-300">
+                        Sugestões de Prompt
+                    </label>
+                    <button 
+                        onClick={() => getNewSuggestions(selectedScenarioValue)}
+                        className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-700"
+                        title="Novas sugestões"
+                    >
+                        <RefreshIcon />
+                    </button>
+                </div>
+                <div id="prompt-suggestions" className="flex flex-wrap gap-2">
+                    {currentSuggestions.map((suggestion, index) => (
+                        <button 
+                            key={index}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600 hover:text-white transition-colors"
+                        >
+                            {suggestion}
+                        </button>
+                    ))}
+                </div>
+              </div>
                <div className="mt-4">
                 <label htmlFor="custom-prompt" className="block text-sm font-medium text-gray-300 mb-1">
                   Prompt Customizado (opcional)
@@ -602,8 +650,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               </div>
             ) : (
               <div>
-                <div className="flex items-center gap-2">
-                  <button
+                <button
                     onClick={handleGenerateClick}
                     disabled={!originalImage || !isPromptProvided || isLoading}
                     className="w-full flex justify-center items-center gap-2 bg-brand-blue hover:bg-brand-blue/90 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-brand-blue/20"
@@ -616,16 +663,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
                     ) : (
                       'Re-imagine O Futuro'
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsDevMode(prev => !prev)}
-                    className={`px-3 py-3 rounded-lg text-white font-bold transition-colors text-sm flex-shrink-0 ${isDevMode ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600 hover:bg-gray-500'}`}
-                    title={isDevMode ? 'Modo DEV Ativado (sem uso de API)' : 'Ativar Modo DEV'}
-                  >
-                    DEV
-                  </button>
-                </div>
+                </button>
                 {!isPromptProvided && originalImage && !isLoading && (
                   <p className="text-yellow-400 text-center text-sm mt-2">
                     Adicione uma descrição ao cenário ou um prompt customizado para continuar.
