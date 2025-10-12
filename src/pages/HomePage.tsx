@@ -22,6 +22,7 @@ export const HomePage: React.FC = () => {
   // State for image history
   const [currentImageId, setCurrentImageId] = useState<string | null>(null);
   const [generationHistory, setGenerationHistory] = useState<HistoryEntry[]>([]);
+  const [historySnapshots, setHistorySnapshots] = useState<Record<string, string[]>>({});
 
 
   const [scenarios, setScenarios] = useState<Scenario[]>(() => {
@@ -46,21 +47,44 @@ export const HomePage: React.FC = () => {
   // Save history to localStorage whenever relevant state changes
   useEffect(() => {
     if (currentImageId && originalImageUrl) {
-      const stateToSave = {
-        originalImageUrl,
-        generatedImageUrls,
-        selectedGeneratedImageIndex,
-        selectedScenarioValue,
-        customPrompt,
-        generationHistory,
-      };
-      try {
-        localStorage.setItem(`history_${currentImageId}`, JSON.stringify(stateToSave));
-      } catch (e) {
-        console.error("Failed to save history to localStorage. It might be full.", e);
-      }
+        const trySave = (history: HistoryEntry[], snapshots: Record<string, string[]>) => {
+            const stateToSave = {
+                originalImageUrl,
+                generatedImageUrls,
+                selectedGeneratedImageIndex,
+                selectedScenarioValue,
+                customPrompt,
+                generationHistory: history,
+                historySnapshots: snapshots,
+            };
+            try {
+                localStorage.setItem(`history_${currentImageId}`, JSON.stringify(stateToSave));
+                // If the save was successful but the state was pruned during the process,
+                // we update the React state to match what was actually saved.
+                if (history.length < generationHistory.length) {
+                    setGenerationHistory(history);
+                    setHistorySnapshots(snapshots);
+                }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'QuotaExceededError' && history.length > 0) {
+                    console.warn("LocalStorage quota exceeded. Pruning oldest history entry and retrying.");
+                    const historyCopy = [...history];
+                    const snapshotsCopy = { ...snapshots };
+                    // Prune the oldest entry (which is at the end of the array)
+                    const oldestEntry = historyCopy.pop();
+
+                    if (oldestEntry) {
+                      delete snapshotsCopy[oldestEntry.id];
+                      trySave(historyCopy, snapshotsCopy); // Retry recursively with the smaller data
+                    }
+                } else {
+                    console.error("Failed to save history to localStorage.", e);
+                }
+            }
+        };
+        trySave(generationHistory, historySnapshots);
     }
-  }, [currentImageId, originalImageUrl, generatedImageUrls, selectedGeneratedImageIndex, selectedScenarioValue, customPrompt, generationHistory]);
+  }, [currentImageId, originalImageUrl, generatedImageUrls, selectedGeneratedImageIndex, selectedScenarioValue, customPrompt, generationHistory, historySnapshots]);
 
 
   const handleSaveScenarios = (updatedScenarios: Scenario[]) => {
@@ -87,6 +111,7 @@ export const HomePage: React.FC = () => {
       setCustomPrompt('');
       setSelectedScenarioValue(scenarios[0]?.value || '');
       setGenerationHistory([]);
+      setHistorySnapshots({});
     };
 
     if (savedStateJSON) {
@@ -99,6 +124,7 @@ export const HomePage: React.FC = () => {
             setSelectedScenarioValue(savedState.selectedScenarioValue);
             setCustomPrompt(savedState.customPrompt || '');
             setGenerationHistory(savedState.generationHistory || []);
+            setHistorySnapshots(savedState.historySnapshots || {});
         } catch (e) {
             console.error("Failed to parse saved history, loading as new image.", e);
             loadNewImage(file);
@@ -144,6 +170,8 @@ export const HomePage: React.FC = () => {
           // History state
           generationHistory={generationHistory}
           onGenerationHistoryChange={setGenerationHistory}
+          historySnapshots={historySnapshots}
+          onHistorySnapshotsChange={setHistorySnapshots}
         />
       ) : (
         <ScenarioForm

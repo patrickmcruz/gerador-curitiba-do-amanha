@@ -6,7 +6,7 @@ import { ImageMaskEditor } from './ImageMaskEditor';
 import { GenerationHistoryPanel } from './GenerationHistoryPanel';
 import { imageGenerationService } from '../../../services/image-generation';
 import { Scenario, HistoryEntry } from '../constants';
-import { PlusIcon, SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon } from '../../../components/ui/Icons';
+import { SpinnerIcon, BrushIcon, SparklesIcon, ClockIcon, PencilIcon } from '../../../components/ui/Icons';
 
 interface ImageGeneratorProps {
     scenarios: Scenario[];
@@ -35,6 +35,8 @@ interface ImageGeneratorProps {
     // History state
     generationHistory: HistoryEntry[];
     onGenerationHistoryChange: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
+    historySnapshots: Record<string, string[]>;
+    onHistorySnapshotsChange: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
 }
 
 const createMockImageWithText = (imageFile: File, text: string): Promise<string> => {
@@ -118,6 +120,26 @@ const createMockImageWithText = (imageFile: File, text: string): Promise<string>
     });
 };
 
+const createThumbnail = (dataUrl: string, targetWidth: number = 128, quality: number = 0.85): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const aspectRatio = img.naturalHeight / img.naturalWidth;
+            canvas.width = targetWidth;
+            canvas.height = targetWidth * aspectRatio;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => reject(new Error('Image failed to load for thumbnail generation'));
+        img.src = dataUrl;
+    });
+};
+
 export const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
     scenarios, 
     onManageScenarios, 
@@ -142,6 +164,8 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     onRedoIndexChange,
     generationHistory,
     onGenerationHistoryChange,
+    historySnapshots,
+    onHistorySnapshotsChange,
 }) => {
   // Local state for UI interactions within this component
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -207,16 +231,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               createMockImageWithText(originalImage, `[DEV MOCK 3] ${fullPrompt}`),
             ]);
             onGeneratedImageUrlsChange(mockUrls);
+            const thumbnailUrl = await createThumbnail(mockUrls[0]);
             const newHistoryEntry: HistoryEntry = {
                 id: crypto.randomUUID(),
                 timestamp: Date.now(),
                 type: 'initial',
                 prompt: fullPrompt,
-                thumbnailUrl: mockUrls[0],
-                generatedImageUrls: mockUrls,
+                thumbnailUrl: thumbnailUrl,
                 selectedGeneratedImageIndex: 0,
             };
             onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+            onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: mockUrls }));
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
           }
@@ -231,24 +256,25 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       const newUrls = generatedImageBase64Array.map(b64 => `data:image/png;base64,${b64}`);
       onGeneratedImageUrlsChange(newUrls);
 
+      const thumbnailUrl = await createThumbnail(newUrls[0]);
       const fullPrompt = `Cenário: ${selectedScenario.label}. ${customPrompt || selectedScenario.description}`;
       const newHistoryEntry: HistoryEntry = {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
         type: 'initial',
         prompt: fullPrompt,
-        thumbnailUrl: newUrls[0],
-        generatedImageUrls: newUrls,
+        thumbnailUrl: thumbnailUrl,
         selectedGeneratedImageIndex: 0,
       };
       onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+      onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: newUrls }));
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange]);
+  }, [isDevMode, originalImage, selectedScenario, customPrompt, isPromptProvided, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange]);
 
   const handleModificationGenerateClick = useCallback(async () => {
     if (!selectedGeneratedImageUrl || !generatedImageUrls) {
@@ -279,16 +305,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               onRedoIndexChange(null);
               onGeneratedImageUrlsChange(updatedUrls);
 
+              const thumbnailUrl = await createThumbnail(newMockUrl);
               const newHistoryEntry: HistoryEntry = {
                 id: crypto.randomUUID(),
                 timestamp: Date.now(),
                 type: 'refinement',
                 prompt: modificationPrompt,
-                thumbnailUrl: newMockUrl,
-                generatedImageUrls: updatedUrls,
+                thumbnailUrl: thumbnailUrl,
                 selectedGeneratedImageIndex: selectedGeneratedImageIndex,
               };
               onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+              onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: updatedUrls }));
               setIsRefiningInFullScreen(false);
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Failed to create mock DEV image');
@@ -314,16 +341,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       onRedoIndexChange(null);
       onGeneratedImageUrlsChange(updatedUrls);
 
+      const thumbnailUrl = await createThumbnail(newImageUrl);
       const newHistoryEntry: HistoryEntry = {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
         type: 'refinement',
         prompt: modificationPrompt,
-        thumbnailUrl: newImageUrl,
-        generatedImageUrls: updatedUrls,
+        thumbnailUrl: thumbnailUrl,
         selectedGeneratedImageIndex: selectedGeneratedImageIndex,
       };
       onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+      onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: updatedUrls }));
       setIsRefiningInFullScreen(false);
     } catch (err) {
       console.error(err);
@@ -331,7 +359,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [isDevMode, originalImage, generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange]);
+  }, [isDevMode, originalImage, generatedImageUrls, selectedGeneratedImageIndex, selectedGeneratedImageUrl, selectedScenario, modificationPrompt, customPrompt, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange]);
 
   const handleOpenMaskEditor = (imageUrl: string) => {
       setImageToEditUrl(imageUrl);
@@ -368,16 +396,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               onRedoIndexChange(null);
               onGeneratedImageUrlsChange(updatedUrls);
 
+              const thumbnailUrl = await createThumbnail(newMockUrl);
               const newHistoryEntry: HistoryEntry = {
                 id: crypto.randomUUID(),
                 timestamp: Date.now(),
                 type: 'mask_edit',
                 prompt: prompt,
-                thumbnailUrl: newMockUrl,
-                generatedImageUrls: updatedUrls,
+                thumbnailUrl: thumbnailUrl,
                 selectedGeneratedImageIndex: selectedGeneratedImageIndex,
               };
               onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+              onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: updatedUrls }));
 
               handleCloseMaskEditor();
               setShowModificationUI(false);
@@ -406,16 +435,17 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         onRedoIndexChange(null);
         onGeneratedImageUrlsChange(updatedUrls);
 
+        const thumbnailUrl = await createThumbnail(newImageUrl);
         const newHistoryEntry: HistoryEntry = {
             id: crypto.randomUUID(),
             timestamp: Date.now(),
             type: 'mask_edit',
             prompt: prompt,
-            thumbnailUrl: newImageUrl,
-            generatedImageUrls: updatedUrls,
+            thumbnailUrl: thumbnailUrl,
             selectedGeneratedImageIndex: selectedGeneratedImageIndex,
         };
         onGenerationHistoryChange(prev => [newHistoryEntry, ...prev]);
+        onHistorySnapshotsChange(prev => ({ ...prev, [newHistoryEntry.id]: updatedUrls }));
         
         handleCloseMaskEditor();
         setShowModificationUI(false);
@@ -426,7 +456,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       } finally {
         setIsLoading(false);
       }
-  }, [isDevMode, originalImage, imageToEditUrl, generatedImageUrls, selectedGeneratedImageIndex, onGeneratedImageUrlsChange, handleCloseMaskEditor, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange]);
+  }, [isDevMode, originalImage, imageToEditUrl, generatedImageUrls, selectedGeneratedImageIndex, onGeneratedImageUrlsChange, handleCloseMaskEditor, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange, onGenerationHistoryChange, onHistorySnapshotsChange]);
 
   const handleUndoClick = useCallback(() => {
     if (undoImageUrl && undoIndex !== null && generatedImageUrls) {
@@ -463,19 +493,26 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   }, [redoImageUrl, redoIndex, generatedImageUrls, onGeneratedImageUrlsChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleRevertToHistory = useCallback((entry: HistoryEntry) => {
-    onGeneratedImageUrlsChange(entry.generatedImageUrls);
-    onSelectedGeneratedImageIndexChange(entry.selectedGeneratedImageIndex);
-    onUndoImageUrlChange(null);
-    onUndoIndexChange(null);
-    onRedoImageUrlChange(null);
-    onRedoIndexChange(null);
-    setActiveTab('result');
-    setShowModificationUI(false);
-  }, [onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
+    const snapshotUrls = historySnapshots[entry.id];
+    if (snapshotUrls) {
+        onGeneratedImageUrlsChange(snapshotUrls);
+        onSelectedGeneratedImageIndexChange(entry.selectedGeneratedImageIndex);
+        onUndoImageUrlChange(null);
+        onUndoIndexChange(null);
+        onRedoImageUrlChange(null);
+        onRedoIndexChange(null);
+        setActiveTab('result');
+        setShowModificationUI(false);
+    } else {
+        console.error("Snapshot not found for history entry:", entry.id);
+        setError("Não foi possível restaurar o histórico (snapshot não encontrado).");
+    }
+  }, [historySnapshots, onGeneratedImageUrlsChange, onSelectedGeneratedImageIndexChange, onUndoImageUrlChange, onUndoIndexChange, onRedoImageUrlChange, onRedoIndexChange]);
 
   const handleClearHistory = useCallback(() => {
     onGenerationHistoryChange([]);
-  }, [onGenerationHistoryChange]);
+    onHistorySnapshotsChange({});
+  }, [onGenerationHistoryChange, onHistorySnapshotsChange]);
 
   return (
     <>
@@ -489,15 +526,20 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 
           <div className="flex flex-col gap-6 md:col-span-2">
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold text-gray-300">2. Escolha um cenário</h2>
+              <div className="flex justify-between items-center border-b border-gray-700 mb-2">
+                <h2 
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue border-b-2 border-brand-blue rounded-t-lg -mb-px"
+                >
+                  2. Escolha um cenário
+                </h2>
                 <button
                   onClick={onManageScenarios}
-                  className="p-1.5 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-purple"
-                  aria-label="Adicionar novo cenário"
-                  title="Adicionar novo cenário"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg text-gray-400 border-transparent hover:text-white"
+                  aria-label="Gerenciar cenários"
+                  title="Gerenciar cenários"
                 >
-                  <PlusIcon />
+                  <PencilIcon />
+                  <span>Cenários</span>
                 </button>
               </div>
               <ScenarioSelector
@@ -595,34 +637,34 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
           </div>
 
           <div className="md:col-span-3 flex flex-col h-full">
-            <div className="flex border-b border-gray-700 mb-2">
-              <button
-                onClick={() => setActiveTab('result')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg -mb-px border-b-2 ${
-                  activeTab === 'result'
-                    ? 'text-brand-blue border-brand-blue'
-                    : 'text-gray-400 border-transparent hover:text-white'
-                }`}
-              >
-                <SparklesIcon />
-                Resultado
-              </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg -mb-px border-b-2 ${
-                  activeTab === 'history'
-                    ? 'text-brand-blue border-brand-blue'
-                    : 'text-gray-400 border-transparent hover:text-white'
-                }`}
-              >
-                <ClockIcon />
-                Histórico
-              </button>
+            <div className="flex justify-between items-center border-b border-gray-700 mb-2">
+                <h2 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-blue border-b-2 border-brand-blue rounded-t-lg -mb-px">
+                    3. Veja o Resultado
+                </h2>
+                <div className="flex">
+                    <button
+                        onClick={() => setActiveTab('result')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg ${
+                            activeTab === 'result' ? 'text-white' : 'text-gray-400 hover:text-white'
+                        }`}
+                        >
+                        <SparklesIcon />
+                        Resultado
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('history')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors rounded-t-lg ${
+                            activeTab === 'history' ? 'text-white' : 'text-gray-400 hover:text-white'
+                        }`}
+                        >
+                        <ClockIcon />
+                        Histórico
+                    </button>
+                </div>
             </div>
             
             {activeTab === 'result' ? (
               <ImageDisplay
-                title="3. Veja o Resultado"
                 subtitle={generatedImageUrls ? `Futuro: +${futureYearLabel} (${selectedScenario.label}) - Variação ${selectedGeneratedImageIndex + 1}/${generatedImageUrls.length}` : undefined}
                 originalImageUrl={originalImageUrl}
                 imageUrls={generatedImageUrls}

@@ -24,6 +24,5 @@ export interface HistoryEntry {
   prompt: string;
   thumbnailUrl: string;
   // State to restore
-  generatedImageUrls: string[];
   selectedGeneratedImageIndex: number;
 }

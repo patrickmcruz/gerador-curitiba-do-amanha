@@ -3,7 +3,6 @@ import { SpinnerIcon, DownloadIcon, FullScreenIcon, CloseIcon, SparklesIcon, Com
 import { ImageComparisonSlider } from './ImageComparisonSlider';
 
 interface ImageDisplayProps {
-  title: string;
   subtitle?: string;
   imageUrls: string[] | null;
   originalImageUrl: string | null;
@@ -25,7 +24,6 @@ interface ImageDisplayProps {
 }
 
 export const ImageDisplay: React.FC<ImageDisplayProps> = ({ 
-  title, 
   subtitle, 
   imageUrls, 
   originalImageUrl, 
@@ -108,8 +106,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
   return (
     <div className="w-full flex flex-col h-full">
-      <h2 className="text-lg font-semibold mb-2 text-gray-300">{title}</h2>
-      {subtitle && <p className="text-sm text-gray-400 -mt-2 mb-2">{subtitle}</p>}
+      {subtitle && <p className="text-sm text-gray-400 mb-2">{subtitle}</p>}
       <div
         className="relative group w-full flex-grow bg-gray-700/50 rounded-lg flex items-center justify-center border border-gray-700 overflow-hidden"
       >
@@ -122,7 +119,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
           <>
             <img 
               src={selectedImageUrl} 
-              alt={title} 
+              alt="Resultado Gerado" 
               className="object-cover w-full h-full"
               onClick={() => canBeMaximized && setIsFullScreen(true)}
               style={{ cursor: canBeMaximized ? 'zoom-in' : 'default' }}
@@ -260,7 +257,7 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
             ) : (
               <img 
                 src={selectedImageUrl} 
-                alt={title} 
+                alt="Resultado gerado em tela cheia" 
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               />
             )}
