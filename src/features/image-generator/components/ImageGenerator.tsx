@@ -50,28 +50,55 @@ const createMockImageWithText = (imageFile: File, text: string): Promise<string>
           // Draw the original image
           ctx.drawImage(img, 0, 0);
   
-          // Prepare text styling
-          const fontSize = Math.max(48, Math.round(canvas.width / 15));
+          // --- Text rendering with wrapping ---
+          const fontSize = Math.max(24, Math.round(canvas.width / 30));
           ctx.font = `bold ${fontSize}px Inter, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           
-          // Add a semi-transparent background for the text for better readability
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-          const textMetrics = ctx.measureText(text);
-          const textWidth = textMetrics.width;
-          const textHeight = fontSize; // Approximate height
-          const padding = 20;
-          ctx.fillRect(
-            canvas.width / 2 - textWidth / 2 - padding,
-            canvas.height / 2 - textHeight / 2 - padding,
-            textWidth + padding * 2,
-            textHeight + padding * 2
-          );
-  
-          // Draw the main text
-          ctx.fillStyle = 'white';
-          ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+          const wrapText = (context: CanvasRenderingContext2D, textToWrap: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
+            const words = textToWrap.split(' ');
+            let line = '';
+            const lines = [];
+            for(let n = 0; n < words.length; n++) {
+              const testLine = line + words[n] + ' ';
+              const metrics = context.measureText(testLine);
+              const testWidth = metrics.width;
+              if (testWidth > maxWidth && n > 0) {
+                lines.push(line);
+                line = words[n] + ' ';
+              } else {
+                line = testLine;
+              }
+            }
+            lines.push(line);
+
+            // Calculate background size
+            const padding = fontSize * 0.5;
+            const totalHeight = lines.length * lineHeight;
+            const maxLineWidth = lines.reduce((max, l) => Math.max(max, context.measureText(l).width), 0);
+            
+            // Draw background
+            context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            context.fillRect(
+                x - maxLineWidth / 2 - padding, 
+                y - totalHeight / 2 - padding, 
+                maxLineWidth + padding * 2, 
+                totalHeight + padding * 2
+            );
+            
+            // Draw text
+            context.fillStyle = 'white';
+            let currentY = y - ((lines.length - 1) * lineHeight / 2);
+            for (let i = 0; i < lines.length; i++) {
+              context.fillText(lines[i].trim(), x, currentY);
+              currentY += lineHeight;
+            }
+          }
+
+          const maxWidth = canvas.width * 0.9;
+          const lineHeight = fontSize * 1.2;
+          wrapText(ctx, text, canvas.width / 2, canvas.height / 2, maxWidth, lineHeight);
           
           resolve(canvas.toDataURL('image/png'));
         };
@@ -167,10 +194,11 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       setTimeout(async () => {
         if (originalImage) {
           try {
+            const fullPrompt = `Cenário: ${selectedScenario.label}. ${customPrompt || selectedScenario.description}`;
             const mockUrls = await Promise.all([
-              createMockImageWithText(originalImage, 'GERADA 01'),
-              createMockImageWithText(originalImage, 'GERADA 02'),
-              createMockImageWithText(originalImage, 'GERADA 03'),
+              createMockImageWithText(originalImage, `[DEV MOCK 1] ${fullPrompt}`),
+              createMockImageWithText(originalImage, `[DEV MOCK 2] ${fullPrompt}`),
+              createMockImageWithText(originalImage, `[DEV MOCK 3] ${fullPrompt}`),
             ]);
             onGeneratedImageUrlsChange(mockUrls);
           } catch (err) {
@@ -210,7 +238,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         setTimeout(async () => {
           if (originalImage && generatedImageUrls) {
             try {
-              const newMockUrl = await createMockImageWithText(originalImage, 'VARIAÇÃO (TEXTO)');
+              const newMockUrl = await createMockImageWithText(originalImage, `[DEV MOCK VARIAÇÃO] ${modificationPrompt}`);
               const imageToUndo = selectedGeneratedImageUrl;
               const updatedUrls = [...generatedImageUrls];
               updatedUrls[selectedGeneratedImageIndex] = newMockUrl;
@@ -276,7 +304,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         setTimeout(async () => {
           if (originalImage && generatedImageUrls) {
             try {
-              const newMockUrl = await createMockImageWithText(originalImage, 'EDIÇÃO MÁGICA');
+              const newMockUrl = await createMockImageWithText(originalImage, `[DEV MOCK MÁGICA] ${prompt}`);
               const imageToUndo = imageToEditUrl;
               const updatedUrls = [...generatedImageUrls];
               updatedUrls[selectedGeneratedImageIndex] = newMockUrl;
